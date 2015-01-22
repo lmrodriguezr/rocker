@@ -1,0 +1,180 @@
+#!/usr/bin/env ruby
+#
+# @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
+# @author Luis (Coto) Orellana
+# @license artistic license 2.0
+# @update Jan-22-2015
+#
+
+require 'rocker'
+require 'optparse'
+
+
+#================================[ Options parsing ]
+$t = {
+   'build'   => 'Creates in silico metagenomes and training sets from reference genomes.',
+   'compile' => 'Identifies the most discriminant bit-score per alignment position in a set of sequence.',
+   'filter'  => 'Uses a pre-compiled set of bit-score thresholds to filter a search result.',
+   'search'  => 'Uses a ROCker compilation to identify reads putatively derived from a set of sequences.',
+   'plot'    => 'Generates a graphical representation of the alignment, the thresholds, and the hits.',
+}
+task = (ARGV.size > 0 ? ARGV.shift : '').downcase
+ARGV << '-h' if ARGV.size==0
+
+o = {}
+opts = OptionParser.new do |opt|
+   if $t.keys.include? task
+      opt.banner = "Usage: ROCker.rb #{task} [options]"
+      opt.separator ""
+      opt.separator $t[task]
+      opt.separator ""
+   end
+   case task
+   when 'build'
+      unless ROCker.has_build_gems?
+	 opt.separator "+ UNSATISFIED REQUIREMENTS"
+	 opt.separator "    The building task requires uninstalled gems, please install them executing:"
+	 opt.separator "       gem install rest_client"
+	 opt.separator "       gem install nokogiri"
+	 opt.separator ""
+      end
+      opt.separator "+ BUILDING ARGUMENTS"
+      opt.on("-p", "--positive GI1,GI2,GI3", Array, "Comma-separated list of NCBI GIs corresponding to the 'positive' training set. Required unless -P or -a are used."){ |v| o[:posori]=v }
+      opt.on("-n", "--negative GI1,GI2,GI3", Array, "Comma-separated list of NCBI GIs corresponding to the 'negative' training set. See also -N."){ |v| o[:negative]=v }
+      opt.on("-o", "--baseout PATH", "Prefix for the output files to be generated. Required."){ |v| o[:baseout]=v }
+      opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides. By default, proteins are assumed."){ o[:nucl]=true }
+      opt.on("-t", "--threads INT", "Number of threads to use. By default: #{ROCker.default :thr}."){ |v| o[:thr]=v.to_i }
+      opt.separator ""
+      opt.separator "+ ADVANCED BUILDING ARGUMENTS"
+      opt.on("-P", "--positive-file PATH", "File containing the positive set (see -p), one GI per line. If used, -p is not required."){ |v| o[:posfile]=v }
+      opt.on("-N", "--negative-file PATH", "File containing the negative set (see -n), one GI per line."){ |v| o[:negfile]=v }
+      opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. The defline must contain GI numbers. If used, -p is not required."){ |v| o[:aln]=v }
+      opt.on("-s", "--seqdepth NUMBER", "Sequencing depth to be used in building the in silico metagenome. By default: '#{ROCker.default :seqdepth}'."){ |v| o[:seqdepth]=v.to_f }
+      opt.on("-v", "--overlap NUMBER", "Minimum overlap with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_f }
+      opt.on(      "--genome-frx NUMBER", "Fraction to subsample the positive set genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}"){ |v| o[:genomefrx]=v.to_f }
+      opt.on(      "--per-genus", "If selected, only one genome per genus is used to build the metagenome."){ o[:pergenus]=true }
+      opt.on(      "--per-species", "If selected, only one genome per species is used to build the metagenome."){ o[:perspecies]=true }
+      opt.on(      "--nometagenome", "Do not create metagenome. Implies --noblast. By default, metagenome is created."){ |v| o[:nomg]=v }
+      opt.on(      "--noblast", "Do not execute BLAST. By default, BLAST is executed."){ |v| o[:noblast]=v }
+      opt.on(      "--noalignment", "Do not align reference set. By default, references are aligned."){ |v| o[:noaln]=v }
+      opt.on(      "--nocleanup", "Keep all intermediate files. By default, intermediate files are removed."){ |v| o[:noclean]=v }
+      opt.on(      "--reuse-files", "Re-use existing result files. By default, existing files are ignored."){ |v| o[:reuse]=true }
+      opt.separator ""
+      opt.separator "+ EXTERNAL SOFTWARE OPTIONS"
+      opt.on("-G", "--grinder PATH", "Path to the grinder executable. By default: '#{ROCker.default :grinder}' (in the $PATH)."){ |v| o[:grinder]=v }
+      opt.on("-M", "--muscle PATH", "Path to the muscle executable. By default: '#{ROCker.default :muscle}' (in the $PATH)."){ |v| o[:muscle]=v }
+      opt.on("-B", "--blastbins PATH", "Path to the Blast+ executables. By default: '#{ROCker.default :blastbins}' (in the $PATH)."){ |v| o[:blastbins]=v }
+      opt.on(      "--grinder-cmd STR", "Command calling grinder, where %1$s: grinder bin, %2$s: input, %3$s: seq. depth, %4$s: output.",
+	 "By default: '#{ROCker.default :grindercmd}'."){ |v| o[:grindercmd]=v }
+      opt.on("--muscle-cmd STR", "Command calling muscle, where %1$s: muscle bin, %2$s: input, %3$s: output.",
+	 "By default: '#{ROCker.default :musclecmd}'."){ |v| o[:musclecmd]=v }
+      opt.on("--blast-cmd STR", "Command calling BLAST search, where %1$s: blast bins, %2$s: program, %3$s: input, %4$s: database, %5$s: output, %6$d: threads.",
+	 "By default: '#{ROCker.default :blastcmd}'."){ |v| o[:blastcmd]=v }
+      opt.on("--makedb-cmd STR", "Command calling BLAST format, where %1$s: blast bins, %2$s: dbtype, %3$s: input, %4$s: database.",
+	 "By default: '#{ROCker.default :makedbcmd}'."){ |v| o[:makedbcmd]=v }
+   when 'compile'
+      opt.separator "+ COMPILATION ARGUMENTS"
+      opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. Required."){ |v| o[:aln]=v }
+      opt.on("-b", "--ref-blast PATH",
+      		"Tabular BLAST (blastx) of the test reads vs. the reference dataset. Required unless -t exists."){ |v| o[:blast]=v }
+      opt.on("-k", "--rocker PATH", "ROCker file to be created. Required."){ |v| o[:rocker]=v }
+      opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides. By default, proteins are assumed."){ o[:nucl]=true }
+      opt.separator ""
+      opt.separator "+ ADVANCED COMPILATION ARGUMENTS"
+      opt.on("-t", "--table PATH", "Formated tabular file to be created (or reused). Required unless -b is provided."){ |v| o[:table]=v }
+      opt.on(      "--min-score NUMBER", "Minimum Bit-Score to consider a hit. By default: #{ROCker.default :minscore}"){ |v| o[:minscore]=v.to_f }
+      opt.on(      "--norefine", "Do not refine windows."){ o[:refine]=false }
+      opt.on("-w", "--window INT", "Initial size of alignment windows (in number of AA columns). By default: #{ROCker.default :win}."){ |v| o[:win]=v.to_i }
+      opt.separator ""
+      opt.separator "+ INPUT/OUTPUT"
+      opt.separator "   o The input alignment (-a) MUST be in FastA format, and the IDs must"
+      opt.separator "     coincide with those from the BLAST (-b)."
+      opt.separator "   o The input BLAST (-b) MUST be in tabular format. True positives must"
+      opt.separator "     contain the string '@%' somewhere in the query ID."
+      opt.separator "   o The table file (-t) should be tab-delimited and contain six columns:"
+      opt.separator "      1. Subject ID."
+      opt.separator "      2. Start of alignment in subject (translated to alignment column)."
+      opt.separator "      3. End of alignment in subject (translated to alignment column)."
+      opt.separator "      4. Bit score."
+      opt.separator "      5. A number indicating if it was a true (1) or a false (0) positive."
+      opt.separator "      6. Mid-point of the alignment in the reference sequence."
+      opt.separator "   o The ROCker file (-k) is a tab-delimited file containing five columns:"
+      opt.separator "      1. First column of the window in the alignment."
+      opt.separator "      2. Last column of the window in the alignment."
+      opt.separator "      3. Number of positives in the window (hits)."
+      opt.separator "      4. Number of true positives in the window."
+      opt.separator "      5. Bit score threshold set for the window."
+      opt.separator "     The file also contains the alignment (commented with #:)."
+      opt.separator ""
+   when 'filter'
+      opt.separator "+ FILTERING ARGUMENTS"
+      opt.on("-k", "--rocker PATH", "ROCker file generated by the compile task (-k). Required."){ |v| o[:rocker]=v }
+      opt.on("-x", "--query-blast PATH", "Tabular BLAST (blastx) of the query reads vs. the reference dataset. Required."){ |v| o[:qblast]=v }
+      opt.on("-o", "--out-blast PATH", "Filtered tabular BLAST to be created. Required."){ |v| o[:oblast]=v }
+   when 'search'
+      opt.on("-k", "--rocker PATH", "ROCker file generated by the compile task (-k). Required."){ |v| o[:rocker]=v }
+      opt.on("-q", "--query PATH", "File containing the query sequences in FastA format. Required."){ |v| o[:query]=v }
+      opt.on("-o", "--out-blast PATH", "Filtered tabular BLAST to be created. Required."){ |v| o[:oblast]=v }
+   when 'plot'
+      opt.separator "+ PLOTTING ARGUMENTS"
+      opt.on("-k", "--rocker PATH", "ROCker file generated by the compile task (-k). Required."){ |v| o[:rocker]=v }
+      opt.on("-b", "--ref-blast PATH",
+      		"Tabular BLAST (blastx) of the test reads vs. the reference dataset. Required unless -t exists."){ |v| o[:blast]=v }
+      opt.on("-o", "--plot-file PATH", "File to be created with the plot. By default: value of -k + '.' + value of -f."){ |v| o[:gout]=v }
+      opt.separator ""
+      opt.separator "+ ADVANCED PLOTTING ARGUMENTS"
+      opt.on("-t", "--table PATH", "Formated tabular file to be created (or reused). Required unless -b is provided."){ |v| o[:table]=v }
+      opt.on(      "--color", "Color alignment by amino acid."){ o[:color]=true }
+      opt.on(      "--min-score NUMBER", "Minimum Bit-Score to consider a hit. By default: #{ROCker.default :minscore}"){ |v| o[:minscore]=v.to_f }
+      opt.on("-s", "--subject SBJ1,SBJ2,...", Array,
+      	"Plot only information regarding this(ese) subject(s). If multiple, separate by comma. By default, all hits are plotted."){ |v| o[:sbj]=v }
+      opt.on("-f", "--plot-format STRING",
+      	"Format of the plot file. Supported values: pdf (default), png, jpeg, and tiff."){ |v| o[:gformat]=v }
+      opt.on("-W", "--width NUMBER", "Width of the plot in inches. By default: #{ROCker.default :width}."){ |v| o[:width]=v.to_f }
+      opt.on("-H", "--height NUMBER", "Height of the plot in inches. By defaule: #{ROCker.default :height}."){ |v| o[:width]=v.to_f }
+   else
+      opt.banner = "Usage: ROCker.rb [task] [options]"
+      opt.separator ""
+      opt.separator "Please specify one of the following tasks:"
+      $t.keys.each{ |t| opt.separator "     #{t}:\t#{$t[t]}" }
+   end
+   opt.separator ""
+   opt.separator "+ GENERAL ARGUMENTS"
+   opt.on("-R", "--path-to-r PATH", "Path to the R executable to be used. By default: '#{ROCker.default :r}'."){ |v| o[:r]=v }
+   opt.on("-q", "--quiet", "Run quietly."){ |v| o[:q]=true }
+   opt.on("-d", "--debug", "Display debugging information."){ |v| o[:debug]=true }
+   opt.on("-h", "--help","Display this screen") do
+      puts opt
+      exit
+   end
+   opt.separator ""
+   unless $t.include? task
+      puts opt
+      exit
+   end
+end
+opts.parse!
+
+
+#================================[ Main ]
+rocker = ROCker.new(o)
+begin
+   case task
+   when 'build'
+      rocker.build!
+   when 'compile'
+      rocker.compile!
+   when 'filter'
+      rocker.filter!
+   when 'search'
+      rocker.search!
+   when 'plot'
+      rocker.plot!
+   end
+rescue => err
+   $stderr.puts "Exception: #{err}\n\n"
+   err.backtrace.each { |l| $stderr.puts l + "\n" }
+   err
+end
+
+
