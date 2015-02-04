@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jan-22-2015
+# @update Feb-04-2015
 #
 
 require 'rocker/blasthit'
@@ -27,7 +27,7 @@ class ROCker
       # Filter
       :sbj=>[],
       # Plot
-      :color=>false, :gformat=>'pdf', :width=>9, :height=>9
+      :color=>false, :gformat=>'pdf', :width=>9, :height=>9, :impact=>false, :transparency=>true,
    }
    @@HAS_BUILD_GEMS = nil
    def self.eutils() @@EUTILS end
@@ -409,8 +409,8 @@ class ROCker
       data.rrun "par(mar=c(0,4,0,0.5)+.1);"
       data.rrun "plot(1, t='n', xlim=c(0.5,#{data.aln.cols}+0.5), ylim=range(x$V4)+c(-0.04,0.04)*diff(range(x$V4)), xlab='', ylab='Bit score', xaxs='i', xaxt='n');"
       data.rrun "noise <- runif(ncol(x),-.2,.2)"
-      data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, col=ifelse(x$V5==1, rgb(0,0,.5,.2), rgb(.5,0,0,.2)), length=0);"
-      data.rrun "points(x$V6, x$V4+noise, col=ifelse(x$V5==1, rgb(0,0,.5,.5), rgb(.5,0,0,.5)), pch=19, cex=1/4);"
+      data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".2" : "1"}), rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"})), length=0);"
+      data.rrun "points(x$V6, x$V4+noise, col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".5" : "1"}), rgb(.5,0,0,#{@o[:transparency] ? ".5" : "1"})), pch=19, cex=1/4);"
 
       puts "Plotting windows." unless @o[:q]
       if some_thr
@@ -433,17 +433,26 @@ class ROCker
 
       puts "Plotting statistics." unless @o[:q]
       data.rrun "par(mar=c(5,4,0,0.5)+.1);"
-      unless @o[:q] or not some_thr
-	 puts "  * sensitivity: #{data.rrun "100*sum(w$tp)/(sum(w$tp)+sum(w$fn))", :float}%"
-	 puts "  * specificity: #{data.rrun "100*sum(w$tn)/(sum(w$fp)+sum(w$tn))", :float}%"
-	 puts "  * accuracy: #{data.rrun "100*(sum(w$tp)+sum(w$tn))/(sum(w$p)+sum(w$n))", :float}%"
-      end
-      data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}),ylim=c(50,100),xlab='Alignment position (amino acids)',ylab='Precision',xaxs='i');"
+      data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}),ylim=c(#{@o[:impact] ? "-2,.1" : "50,100"}),xlab='Alignment position (amino acids)',ylab='Precision',xaxs='i');"
       if some_thr
+	 sn = data.rrun "100*sum(w$tp)/(sum(w$tp)+sum(w$fn))", :float
+	 sp = data.rrun "100*sum(w$tn)/(sum(w$fp)+sum(w$tn))", :float
+	 ac = data.rrun "100*(sum(w$tp)+sum(w$tn))/(sum(w$p)+sum(w$n))", :float
+	 unless @o[:q]
+	    puts "  * sensitivity: #{sn}%"
+	    puts "  * specificity: #{sp}%"
+	    puts "  * accuracy: #{ac}%"
+	 end
 	 data.rrun "pos <- (w$V1+w$V2)/2"
-	 data.rrun "lines(pos[!is.na(w$specificity)], w$specificity[!is.na(w$specificity)], col='darkred', lwd=2, t='o', cex=1/3, pch=19);"
-	 data.rrun "lines(pos[!is.na(w$sensitivity)], w$sensitivity[!is.na(w$sensitivity)], col='darkgreen', lwd=2, t='o', cex=1/3, pch=19);"
-	 data.rrun "lines(pos[!is.na(w$accuracy)], w$accuracy[!is.na(w$accuracy)], col='darkblue', lwd=2, t='o', cex=1/3, pch=19);"
+	 if @o[:impact]
+	    data.rrun "lines(pos[!is.na(w$specificity)], (w$specificity[!is.na(w$specificity)]-#{sp})*w$tp[!is.na(w$specificity)]/sum(w$tp), col='darkred', lwd=2, t='o', cex=1/3, pch=19);"
+	    data.rrun "lines(pos[!is.na(w$sensitivity)], (w$sensitivity[!is.na(w$sensitivity)]-#{sn})*w$tn[!is.na(w$sensitivity)]/sum(w$tn), col='darkgreen', lwd=2, t='o', cex=1/3, pch=19);"
+	    data.rrun "lines(pos[!is.na(w$accuracy)], (w$accuracy[!is.na(w$accuracy)]-#{ac})*(w$tp+w$tn)[!is.na(w$accuracy)]/sum(c(w$tp, w$tn)), col='darkblue', lwd=2, t='o', cex=1/3, pch=19);"
+	 else
+	    data.rrun "lines(pos[!is.na(w$specificity)], w$specificity[!is.na(w$specificity)], col='darkred', lwd=2, t='o', cex=1/3, pch=19);"
+	    data.rrun "lines(pos[!is.na(w$sensitivity)], w$sensitivity[!is.na(w$sensitivity)], col='darkgreen', lwd=2, t='o', cex=1/3, pch=19);"
+	    data.rrun "lines(pos[!is.na(w$accuracy)], w$accuracy[!is.na(w$accuracy)], col='darkblue', lwd=2, t='o', cex=1/3, pch=19);"
+	 end
 	 #data.rrun "lines(pos[!is.na(w$precision)], w$precision[!is.na(w$precision)], col='purple', lwd=2, t='o', cex=1/3, pch=19);"
       end
       data.rrun "legend('bottomright',legend=c('Specificity','Sensitivity','Accuracy'),lwd=2,col=c('darkred','darkgreen','darkblue'),ncol=3,bty='n')"

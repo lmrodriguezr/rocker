@@ -125,7 +125,9 @@ opts = OptionParser.new do |opt|
       opt.separator "+ ADVANCED PLOTTING ARGUMENTS"
       opt.on("-t", "--table PATH", "Formated tabular file to be created (or reused). Required unless -b is provided."){ |v| o[:table]=v }
       opt.on(      "--color", "Color alignment by amino acid."){ o[:color]=true }
+      opt.on(      "--no-transparency", "Do not use (semi-)transparencies."){ |v| o[:transparency] = v }
       opt.on(      "--min-score NUMBER", "Minimum Bit-Score to consider a hit. By default: #{ROCker.default :minscore}"){ |v| o[:minscore]=v.to_f }
+      opt.on(      "--stats-impact", "Plot impact on statistics, instead of absolute values per window."){ o[:impact]=true }
       opt.on("-s", "--subject SBJ1,SBJ2,...", Array,
       	"Plot only information regarding this(ese) subject(s). If multiple, separate by comma. By default, all hits are plotted."){ |v| o[:sbj]=v }
       opt.on("-f", "--plot-format STRING",
