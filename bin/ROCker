@@ -3,7 +3,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jan-22-2015
+# @update Feb-09-2015
 #
 
 require 'rocker'
@@ -24,7 +24,7 @@ ARGV << '-h' if ARGV.size==0
 o = {}
 opts = OptionParser.new do |opt|
    if $t.keys.include? task
-      opt.banner = "Usage: ROCker.rb #{task} [options]"
+      opt.banner = "Usage: ROCker #{task} [options]"
       opt.separator ""
       opt.separator $t[task]
       opt.separator ""

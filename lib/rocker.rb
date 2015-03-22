@@ -400,7 +400,7 @@ class ROCker
 	 blast2table(@o[:blast], @o[:table], data.aln, @o[:minscore])
       end
 
-      puts "Plotting hits." unless @o[:q]
+      puts "Plotting matches." unless @o[:q]
       extra = @o[:gformat]=='pdf' ? "" : ", units='in', res=300"
       @o[:gout] ||= "#{@o[:rocker]}.#{@o[:gformat]}"
       data.rrun "#{@o[:gformat]}('#{@o[:gout]}', #{@o[:width]}, #{@o[:height]}#{extra});"
@@ -417,7 +417,7 @@ class ROCker
 	 data.rrun "arrows(x0=w$V1, x1=w$V2, y0=w$V5, lwd=2, length=0)"
 	 data.rrun "arrows(x0=w$V2[-nrow(w)], x1=w$V1[-1], y0=w$V5[-nrow(w)], y1=w$V5[-1], lwd=2, length=0)"
       end
-      data.rrun "legend('bottomright',legend=c('Hit span','Hit mid-point','Reference','Non-reference')," +
+      data.rrun "legend('bottomright',legend=c('Match span','Match mid-point','Reference','Non-reference')," +
 	 "lwd=c(1,NA,1,1),pch=c(NA,19,19,19),col=c('black','black','darkblue','darkred'),ncol=4,bty='n')"
 
       puts "Plotting alignment." unless @o[:q]
