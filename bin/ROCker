@@ -3,7 +3,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Feb-09-2015
+# @update Mar-23-2015
 #
 
 require 'rocker'
@@ -128,6 +128,7 @@ opts = OptionParser.new do |opt|
       opt.on(      "--no-transparency", "Do not use (semi-)transparencies."){ |v| o[:transparency] = v }
       opt.on(      "--min-score NUMBER", "Minimum Bit-Score to consider a hit. By default: #{ROCker.default :minscore}"){ |v| o[:minscore]=v.to_f }
       opt.on(      "--stats-impact", "Plot impact on statistics, instead of absolute values per window."){ o[:impact]=true }
+      opt.on(      "--stats-ylim STRING", "Limits of the Y-axis in the bottom panel. By default: '-2,.1' if --stats-impact is set, '50,100' otherwise."){ |v| o[:ylim]=v }
       opt.on("-s", "--subject SBJ1,SBJ2,...", Array,
       	"Plot only information regarding this(ese) subject(s). If multiple, separate by comma. By default, all hits are plotted."){ |v| o[:sbj]=v }
       opt.on("-f", "--plot-format STRING",

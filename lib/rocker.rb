@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Feb-04-2015
+# @update Mar-23-2015
 #
 
 require 'rocker/blasthit'
@@ -433,7 +433,7 @@ class ROCker
 
       puts "Plotting statistics." unless @o[:q]
       data.rrun "par(mar=c(5,4,0,0.5)+.1);"
-      data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}),ylim=c(#{@o[:impact] ? "-2,.1" : "50,100"}),xlab='Alignment position (amino acids)',ylab='Precision',xaxs='i');"
+      data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}),ylim=c(#{@o[:ylim].nil? ? (@o[:impact] ? "-2,.1" : "50,100") : @o[:ylim]}),xlab='Alignment position (amino acids)',ylab='Precision',xaxs='i');"
       if some_thr
 	 sn = data.rrun "100*sum(w$tp)/(sum(w$tp)+sum(w$fn))", :float
 	 sp = data.rrun "100*sum(w$tn)/(sum(w$fp)+sum(w$tn))", :float
