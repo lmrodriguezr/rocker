@@ -148,7 +148,7 @@ class ROCker
       print "\n" unless @o[:q]
       unless @o[:pertaxon].nil?
 	 genome_ids[:positive] = genome_org.values
-	 puts "  Using #{genome_org.size} genomes after filtering by #{@o[:pertaxon]}." unless @o[:q]
+	 puts "  Using #{genome_org.size} genome(s) after filtering by #{@o[:pertaxon]}." unless @o[:q]
       end
       all_genome_ids = genome_ids.values.reduce(:+).uniq
       missing = @o[:positive] - positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+)
