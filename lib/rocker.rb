@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Mar-23-2015
+# @update May-07-2015
 #
 
 require 'rocker/blasthit'
@@ -10,12 +10,12 @@ require 'rocker/rocdata'
 
 class ROCker
    #================================[ Class ]
-   @@EUTILS = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils'
+   @@EBIREST = 'http://www.ebi.ac.uk/Tools'
    @@DEFAULTS = {
       # General
       :q=>false, :r=>'R', :nucl=>false, :debug=>false,
       # Build
-      :positive=>[], :negative=>[], :thr=>2,:genomefrx=>1.0, :pergenus=>false, :perspecies=>false,
+      :positive=>[], :negative=>[], :thr=>2,:genomefrx=>1.0,
 	 # ext. software
 	 :grinder=>'grinder', :muscle=>'muscle', :blastbins=>'', :seqdepth=>3, :minovl=>0.75,
 	 :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -base_name "%4$s" -dc \'-~*Nn\' -md "poly4 3e-3 3.3e-8" -mr "95 5" -rd "100 uniform 5"',
@@ -30,16 +30,15 @@ class ROCker
       :color=>false, :gformat=>'pdf', :width=>9, :height=>9, :impact=>false, :transparency=>true,
    }
    @@HAS_BUILD_GEMS = nil
-   def self.eutils() @@EUTILS end
-   def self.defaults() @@DEFAULTS end
-   def self.default(k) @@DEFAULTS[k] end
+   def self.ebirest() @@EBIREST ; end
+   def self.defaults() @@DEFAULTS ; end
+   def self.default(k) @@DEFAULTS[k] ; end
    def self.has_build_gems?
       return @@HAS_BUILD_GEMS unless @@HAS_BUILD_GEMS.nil?
       @@HAS_BUILD_GEMS = TRUE
       begin
 	 require 'rubygems'
 	 require 'restclient'
-	 require 'nokogiri'
       rescue LoadError
 	 @@HAS_BUILD_GEMS = FALSE
       end
@@ -66,7 +65,7 @@ class ROCker
       unless @o[:aln].nil?
          aln = Alignment.new
 	 aln.read_fasta @o[:aln]
-	 @o[:positive] += aln.get_gis
+	 @o[:positive] += aln.get_ids
       end
       raise "-p or -P are mandatory." if @o[:positive].size==0
       raise "-o/--baseout is mandatory." if @o[:baseout].nil?
@@ -89,124 +88,76 @@ class ROCker
 	 $stderr.puts "   # #{@o[:positive]}" if @o[:debug]
 	 ids = Array.new(@o[:positive])
 	 while ids.size>0
-	    f.print efetch({:db=>(@o[:nucl] ? 'nuccore' : 'protein'), :id=>ids.shift(200).join(','), :rettype=>'fasta', :retmode=>'text'})
+	    f.print ebiFetch(:uniprotkb, ids.shift(200), :fasta)
 	 end
       end
       f.close
-      genome_gis = {:positive=>[], :negative=>[]}
+      genome_ids = {:positive=>[], :negative=>[]}
       [:positive, :negative].each do |set|
          unless @o[set].size==0
 	    puts "  * gathering genomes from #{@o[set].size} #{set.to_s} sequence(s)." unless @o[:q]
 	    $stderr.puts "   # #{@o[set]}" if @o[:debug]
-	    genome_gis[set] = genes2genomes(@o[set], @o[:nucl])
+	    genome_ids[set] = genes2genomes(@o[set])
 	 end
       end
-      raise "No genomes associated with the positive set." if genome_gis[:positive].size==0
-      genome_gis[:positive] = genome_gis[:positive].sample( (genome_gis[:positive].size*@o[:genomefrx]).round ) if @o[:genomefrx]
-      raise "No positive genomes selected for metagenome construction, is --genome-frx too small?" if genome_gis[:positive].empty?
-      all_gis = genome_gis.values.reduce(:+).uniq
+      raise "No genomes associated with the positive set." if genome_ids[:positive].size==0
+      genome_ids[:positive] = genome_ids[:positive].sample( (genome_ids[:positive].size*@o[:genomefrx]).round ) if @o[:genomefrx]
+      raise "No positive genomes selected for metagenome construction, is --genome-frx too small?" if genome_ids[:positive].empty?
+      all_genome_ids = genome_ids.values.reduce(:+).uniq
       
       # Locate genes
       puts "Analyzing genome data." unless @o[:q]
-      puts "  * downloading and parsing #{genome_gis[:positive].size} XML file(s)." unless @o[:q]
-      $stderr.puts "   # #{genome_gis[:positive]}" if @o[:debug]
+      puts "  * downloading and parsing #{genome_ids[:positive].size} GFF3 document(s)." unless @o[:q]
+      $stderr.puts "   # #{genome_ids[:positive]}" if @o[:debug]
       positive_coords = {}
       genome_org = {}
       i = 0
-      genome_gis[:positive].each do |gi|
-	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_gis[:positive].size}. \r" unless @o[:q]
+      genome_ids[:positive].each do |genome_id|
+	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids[:positive].size}. \r" unless @o[:q]
+	 # ToDo check organism name using genome_org unless @o[:pertaxon].nil?
 	 $stderr.puts "   # Looking for any of #{@o[:positive]}" if @o[:debug]
-	 genome_file = @o[:baseout] + '.src.' + i.to_s + '.xml'
+	 genome_file = @o[:baseout] + '.src.' + i.to_s + '.gff3'
 	 if @o[:reuse] and File.exist? genome_file
 	    puts "  * reusing existing file: #{genome_file}." unless @o[:q]
 	    ifh = File.open(genome_file, 'r')
-	    doc = Nokogiri::XML( ifh )
+	    doc = ifh.readlines.grep(/^[^#]/)
 	    ifh.close
 	 else
 	    genome_file=nil unless @o[:noclean]
-	    res = efetch({:db=>'nuccore', :id=>gi, :rettype=>'xml', :retmode=>'text'}, genome_file)
-	    doc = Nokogiri::XML( res )
+	    res = ebiFetch(:embl, [genome_id], :gff3, genome_file)
+	    doc = res.split("\n").grep(/^[^#]/)
 	 end
-	 incomplete = true
-	 doc.xpath('//Bioseq-set/Bioseq-set_seq-set/Seq-entry').each do |genome|
-	    genome_gi = genome.at_xpath('./Seq-entry_set/Bioseq-set/Bioseq-set_seq-set/Seq-entry/Seq-entry_seq/Bioseq/Bioseq_id/Seq-id/Seq-id_gi')
-	    if !genome_gi.nil? and gi==genome_gi.content
-	       incomplete = false
-	       positive_coords[gi] ||= []
-	       $stderr.puts "\n   # got #{gi}, scanning" if @o[:debug]
-	       if @o[:pergenus] or @o[:perspecies]
-		  name = genome.at_xpath('./Seq-entry_set/Bioseq-set/Bioseq-set_descr/Seq-descr/Seqdesc/Seqdesc_source/BioSource/BioSource_org/Org-ref/Org-ref_orgname/OrgName/OrgName_name/OrgName_name_binomial/BinomialOrgName')
-		  unless name.nil?
-		     name_g = name.at_xpath('./BinomialOrgName_genus')
-		     name_s = name.at_xpath('./BinomialOrgName_species')
-		     if name_g.nil? or (name_s.nil? and @o[:perspecies])
-		        name = nil
-		     else
-		        name = @o[:perspecies] ? name_g.content + " " + name_s.content :  name_g.content
-		     end
-		  end
-		  if name.nil?
-		     warn "WARNING: Cannot find binomial name of #{gi}, using genome regardless of taxonomy."
-		     name = rand(36**100).to_s(36)
-		  end
-		  break unless genome_org[ name ].nil?
-		  genome_org[ name ] = gi
-	       end
-	       $stderr.puts "   # traversing #{gi}" if @o[:debug]
-	       genome.xpath('./Seq-entry_set/Bioseq-set/Bioseq-set_annot/Seq-annot/Seq-annot_data/Seq-annot_data_ftable/Seq-feat').each do |pr|
-		  pr_gi = pr.at_xpath('./Seq-feat_product/Seq-loc/Seq-loc_whole/Seq-id/Seq-id_gi')
-		  next if pr_gi.nil?
-		  if @o[:positive].include? pr_gi.content
-		     $stderr.puts "   # found #{pr_gi.content}" if @o[:debug]
-		     pr_loc = pr.at_xpath('./Seq-feat_location/Seq-loc/Seq-loc_int/Seq-interval')
-		     if pr_loc.nil?
-			pr_loc = pr.xpath('./Seq-feat_location/Seq-loc/Seq-loc_mix//Seq-loc/Seq-loc_int/Seq-interval')
-			if pr_loc.nil?
-			   warn "WARNING: Impossible to find location of '#{pr_gi.content}' in '#{gi}'."
-			   incomplete = true
-			else
-			   pr_loc.each do |loc_int|
-			      positive_coords[gi] << {
-				 :gi     => pr_gi.content,
-				 :from   => loc_int.at_xpath('./Seq-interval_from').content.to_i,
-				 :to     => loc_int.at_xpath('./Seq-interval_to').content.to_i
-				 #, :strand => loc_int.at_xpath('./Seq-interval_strand/Na-strand/@value').content
-			      }
-			   end
-			end
-		     else
-			positive_coords[gi] << {
-			   :gi     => pr_gi.content,
-			   :from   => pr_loc.at_xpath('./Seq-interval_from').content.to_i,
-			   :to     => pr_loc.at_xpath('./Seq-interval_to').content.to_i
-			   #, :strand => pr_loc.at_xpath('./Seq-interval_strand/Na-strand/@value').content
-			}
-		     end
-		  end
-	       end
-	       break
-	    end
+	 doc.each do |ln|
+	    r = ln.chomp.split /\t/
+	    prots = r[8].split(/;/).grep(/^db_xref=UniProtKB\/TrEMBL:/){ |xref| xref.split(/:/)[1] }
+	    p = prots.select{ |p| @o[:positive].include? p }.first
+	    next if p.nil?
+	    positive_coords[ r[0] ] ||= []
+	    positive_coords[ r[0] ] << {
+	       #:strand	=> r[6],
+	       :prot_id	=> p,
+	       :from	=> r[3].to_i,
+	       :to	=> r[4].to_i
+	    }
 	 end
-	 doc = nil
-	 warn "WARNING: Cannot find GI '#{gi}'." if incomplete
       end
-      genome_gis[:positive] = genome_org.values if @o[:pergenus] or @o[:perspecies]
-      all_gis = genome_gis.values.reduce(:+).uniq
       print "\n" unless @o[:q]
-      missing = @o[:positive] - positive_coords.values.map{ |a| a.map{ |b| b[:gi] } }.reduce(:+)
-      warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\n\n" unless missing.size==0 or @o[:genomefrx]<1.0 or @o[:pergenus] or @o[:perspecies]
+      genome_ids[:positive] = genome_org.values unless @o[:pertaxon].nil?
+      all_genome_ids = genome_ids.values.reduce(:+).uniq
+      missing = @o[:positive] - positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+)
+      warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\n\n" unless missing.size==0 or @o[:genomefrx]<1.0 or not @o[:pertaxon].nil?
       
       # Download genomes
       genomes_file = @o[:baseout] + '.src.fasta'
       if @o[:reuse] and File.exist? genomes_file
 	 puts "  * reusing existing file: #{genomes_file}." unless @o[:q]
       else
-	 puts "  * downloading #{all_gis.size} genome(s) in FastA." unless @o[:q]
-	 $stderr.puts "   # #{all_gis}" if @o[:debug]
-	 ids = Array.new(all_gis)
+	 puts "  * downloading #{all_genome_ids.size} genome(s) in FastA." unless @o[:q]
+	 $stderr.puts "   # #{all_genome_ids}" if @o[:debug]
+	 ids = Array.new(all_genome_ids)
 	 ofh = File.open(genomes_file, 'w')
 	 while ids.size>0
-	    ofh.print efetch({:db=>'nuccore', :id=>ids.shift(200).join(','), :rettype=>'fasta', :retmode=>'text'})
+	    ofh.print ebiFetch('embl', ids.shift(200), 'fasta')
 	 end
 	 ofh.close
       end
@@ -244,11 +195,11 @@ class ROCker
 		  Thread.current[:ifh] = File.open(@o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa", 'r')
 		  Thread.current[:ofh] = File.open(@o[:baseout] + ".mg.fasta.#{thr_i.to_s}", 'w')
 		  while Thread.current[:l]=Thread.current[:ifh].gets
-		     Thread.current[:rd] = /^>(?<id>\d+) reference=gi\|(?<gi>\d+)\|.* position=(?<comp>complement\()?(?<from>\d+)\.\.(?<to>\d+)\)? /.match(Thread.current[:l])
+		     Thread.current[:rd] = /^>(?<id>\d+) reference=[A-Za-z]+\|(?<genome_id>[A-Za-z0-9_]+)\|.* position=(?<comp>complement\()?(?<from>\d+)\.\.(?<to>\d+)\)? /.match(Thread.current[:l])
 		     unless Thread.current[:rd].nil?
 			Thread.current[:positive] = false
-			positive_coords[Thread.current[:rd][:gi]] ||= []
-			positive_coords[Thread.current[:rd][:gi]].each do |gn|
+			positive_coords[Thread.current[:rd][:genome_id]] ||= []
+			positive_coords[Thread.current[:rd][:genome_id]].each do |gn|
 			   Thread.current[:left]  = Thread.current[:rd][:to].to_i - gn[:from]
 			   Thread.current[:right] = gn[:to] - Thread.current[:rd][:from].to_i
 			   if (Thread.current[:left]*Thread.current[:right] >= 0) and ([Thread.current[:left], Thread.current[:right]].min/(Thread.current[:rd][:to].to_i-Thread.current[:rd][:from].to_i) >= @o[:minovl])
@@ -256,7 +207,7 @@ class ROCker
 			      break
 			   end
 			end
-			Thread.current[:l] = ">#{Thread.current[:rd][:id]}#{Thread.current[:positive] ? "@%" : ""} ref=#{Thread.current[:rd][:gi]}:#{Thread.current[:rd][:from]}..#{Thread.current[:rd][:to]}#{(Thread.current[:rd][:comp]=='complement(')?'-':'+'}\n"
+			Thread.current[:l] = ">#{Thread.current[:rd][:id]}#{Thread.current[:positive] ? "@%" : ""} ref=#{Thread.current[:rd][:genome_id]}:#{Thread.current[:rd][:from]}..#{Thread.current[:rd][:to]}#{(Thread.current[:rd][:comp]=='complement(')?'-':'+'}\n"
 		     end
 		     Thread.current[:ofh].print Thread.current[:l]
 		  end
@@ -470,18 +421,18 @@ class ROCker
       ifh.close
       ofh.close
    end
-   def genes2genomes(gis, nucl=false)
+   def genes2genomes(gene_ids)
       genomes = []
-      ids = Array.new(gis)
+      ids = Array.new(gene_ids)
       while ids.size>0
-	 doc = Nokogiri::XML( elink({:dbfrom=>(nucl ? 'nuccore' : 'protein'), :db=>'nuccore', :id=>ids.shift(200).join(',')}) )
-	 genomes += doc.xpath('/eLinkResult/LinkSet/LinkSetDb/Link/Id').map{ |id| id.content }
+	 doc = ebiFetch(:uniprotkb, ids.shift(200), :annot).split("\n")
+	 genomes += doc.grep( /^DR\s+EMBL;/ ).map{ |ln| ln.split('; ')[1] }
       end
       genomes.uniq
    end
-   def eutils(script, params={}, outfile=nil)
-      response = RestClient.get "#{ROCker.eutils}/#{script}", {:params=>params}
-      raise "Unable to reach NCBI EUtils, error code #{response.code}." unless response.code == 200
+   def restcall(url, outfile=nil)
+      response = RestClient.get url
+      raise "Unable to reach EBI REST client, error code #{response.code}." unless response.code == 200
       unless outfile.nil?
 	 ohf = File.open(outfile, 'w')
 	 ohf.print response.to_s
@@ -489,8 +440,11 @@ class ROCker
       end
       response.to_s
    end
-   def efetch(*etc) self.eutils 'efetch.fcgi', *etc end
-   def elink(*etc) self.eutils 'elink.fcgi', *etc end
+   def ebiFetch(db, ids, format, outfile=nil)
+      url = "#{ROCker.ebirest}/dbfetch/dbfetch/#{db.to_s}/#{ids.join(",")}/#{format.to_s}"
+      $stderr.puts "   # Calling: #{url}" if @o[:debug]
+      self.restcall url
+   end
    def bash(cmd, err_msg=nil)
       o = `#{cmd} 2>&1 && echo '{'`
       raise (err_msg.nil? ? "Error executing: #{cmd}\n\n#{o}" : err_msg) unless o[-2]=='{'

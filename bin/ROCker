@@ -3,9 +3,10 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Mar-23-2015
+# @update May-07-2015
 #
 
+$:.push File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'rocker'
 require 'optparse'
 
@@ -35,25 +36,24 @@ opts = OptionParser.new do |opt|
 	 opt.separator "+ UNSATISFIED REQUIREMENTS"
 	 opt.separator "    The building task requires uninstalled gems, please install them executing:"
 	 opt.separator "       gem install rest_client"
-	 opt.separator "       gem install nokogiri"
 	 opt.separator ""
       end
       opt.separator "+ BUILDING ARGUMENTS"
-      opt.on("-p", "--positive GI1,GI2,GI3", Array, "Comma-separated list of NCBI GIs corresponding to the 'positive' training set. Required unless -P or -a are used."){ |v| o[:posori]=v }
-      opt.on("-n", "--negative GI1,GI2,GI3", Array, "Comma-separated list of NCBI GIs corresponding to the 'negative' training set. See also -N."){ |v| o[:negative]=v }
+      opt.on("-p", "--positive ID1,ID2,ID3", Array, "Comma-separated list of UniProtKB IDs corresponding to the 'positive' training set. Required unless -P or -a are used."){ |v| o[:posori]=v }
+      opt.on("-n", "--negative ID1,ID2,ID3", Array, "Comma-separated list of UniProtKB IDs corresponding to the 'negative' training set. See also -N."){ |v| o[:negative]=v }
       opt.on("-o", "--baseout PATH", "Prefix for the output files to be generated. Required."){ |v| o[:baseout]=v }
-      opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides. By default, proteins are assumed."){ o[:nucl]=true }
+      #opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides (currently not implemented)."){ raise "--nucleotides: This option is currently not implemented." }
       opt.on("-t", "--threads INT", "Number of threads to use. By default: #{ROCker.default :thr}."){ |v| o[:thr]=v.to_i }
       opt.separator ""
       opt.separator "+ ADVANCED BUILDING ARGUMENTS"
-      opt.on("-P", "--positive-file PATH", "File containing the positive set (see -p), one GI per line. If used, -p is not required."){ |v| o[:posfile]=v }
-      opt.on("-N", "--negative-file PATH", "File containing the negative set (see -n), one GI per line."){ |v| o[:negfile]=v }
-      opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. The defline must contain GI numbers. If used, -p is not required."){ |v| o[:aln]=v }
+      opt.on("-P", "--positive-file PATH", "File containing the positive set (see -p), one UniProtKB ID per line. If used, -p is not required."){ |v| o[:posfile]=v }
+      opt.on("-N", "--negative-file PATH", "File containing the negative set (see -n), one UniProtKB ID per line."){ |v| o[:negfile]=v }
+      opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. The defline must contain UniProtKB ID. If used, -p is not required."){ |v| o[:aln]=v }
       opt.on("-s", "--seqdepth NUMBER", "Sequencing depth to be used in building the in silico metagenome. By default: '#{ROCker.default :seqdepth}'."){ |v| o[:seqdepth]=v.to_f }
       opt.on("-v", "--overlap NUMBER", "Minimum overlap with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_f }
       opt.on(      "--genome-frx NUMBER", "Fraction to subsample the positive set genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}"){ |v| o[:genomefrx]=v.to_f }
-      opt.on(      "--per-genus", "If selected, only one genome per genus is used to build the metagenome."){ o[:pergenus]=true }
-      opt.on(      "--per-species", "If selected, only one genome per species is used to build the metagenome."){ o[:perspecies]=true }
+      opt.on(      "--per-taxon RANK", "If selected, only one genome per taxon is used to build the metagenome. Valid ranks include: species, genus, family, order, class, phylum.",
+	 "This option replaces --per-genus and --per-species, but is temporarily out of service."){ |v| o[:pertaxon]=v.downcase }
       opt.on(      "--nometagenome", "Do not create metagenome. Implies --noblast. By default, metagenome is created."){ |v| o[:nomg]=v }
       opt.on(      "--noblast", "Do not execute BLAST. By default, BLAST is executed."){ |v| o[:noblast]=v }
       opt.on(      "--noalignment", "Do not align reference set. By default, references are aligned."){ |v| o[:noaln]=v }
@@ -78,7 +78,7 @@ opts = OptionParser.new do |opt|
       opt.on("-b", "--ref-blast PATH",
       		"Tabular BLAST (blastx) of the test reads vs. the reference dataset. Required unless -t exists."){ |v| o[:blast]=v }
       opt.on("-k", "--rocker PATH", "ROCker file to be created. Required."){ |v| o[:rocker]=v }
-      opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides. By default, proteins are assumed."){ o[:nucl]=true }
+      opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides. By default, proteins are assumed."){ raise "--nucleotides: This option is currently not implemented." }
       opt.separator ""
       opt.separator "+ ADVANCED COMPILATION ARGUMENTS"
       opt.on("-t", "--table PATH", "Formated tabular file to be created (or reused). Required unless -b is provided."){ |v| o[:table]=v }

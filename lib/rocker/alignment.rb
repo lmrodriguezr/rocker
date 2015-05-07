@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jan-22-2015
+# @update May-07-2015
 #
 
 require 'rocker/sequence'
@@ -40,20 +40,20 @@ class Alignment
       @cols = seq.cols if self.cols.nil?
       raise "Aligned sequence #{seq.id} has a different length (#{seq.cols} vs #{self.cols})" unless seq.cols == self.cols
    end
-   def get_gis
-      regexps = [/^gi\|(\d+)\|/, /^(\d+)\|/, /^(\d+)$/, /^gi\|(\d+)$/, /\|gi\|(\d+)\|/, /\|gi\|(\d+)$/]
-      gis = []
+   def get_ids
+      regexps = [/^[A-Za-z]+\|([A-Za-z0-9_]+)\|/, /^([A-Za-z0-9_]+)$/, /^([A-Za-z0-9_]+) /]
+      prot_ids = []
       self.seqs.keys.each do |id|
-	 gi = nil
+	 prot_id = nil
 	 regexps.each do |regexp|
 	    unless regexp.match(id).nil?
-	       gi = $1
+	       prot_id = $1
 	       break
 	    end
 	 end
-	 gis << gi unless gi.nil?
+	 prot_ids << prot_id unless prot_id.nil?
       end
-      gis
+      prot_ids
    end
    def seq(id) @seqs[id] end
    def size() self.seqs.size end
