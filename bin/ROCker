@@ -6,7 +6,8 @@
 # @update May-07-2015
 #
 
-$:.push File.expand_path(File.dirname(__FILE__) + '/../lib')
+lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
+$:.push lib if Dir.exists? lib
 require 'rocker'
 require 'optparse'
 
@@ -53,7 +54,7 @@ opts = OptionParser.new do |opt|
       opt.on("-v", "--overlap NUMBER", "Minimum overlap with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_f }
       opt.on(      "--genome-frx NUMBER", "Fraction to subsample the positive set genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}"){ |v| o[:genomefrx]=v.to_f }
       opt.on(      "--per-taxon RANK", "If selected, only one genome per taxon is used to build the metagenome. Valid ranks include: species, genus, family, order, class, phylum.",
-	 "This option replaces --per-genus and --per-species, but is temporarily out of service."){ |v| o[:pertaxon]=v.downcase }
+	 "This option replaces --per-genus and --per-species from v0.1.*."){ |v| o[:pertaxon]=v.downcase }
       opt.on(      "--nometagenome", "Do not create metagenome. Implies --noblast. By default, metagenome is created."){ |v| o[:nomg]=v }
       opt.on(      "--noblast", "Do not execute BLAST. By default, BLAST is executed."){ |v| o[:noblast]=v }
       opt.on(      "--noalignment", "Do not align reference set. By default, references are aligned."){ |v| o[:noaln]=v }

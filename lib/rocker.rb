@@ -114,7 +114,11 @@ class ROCker
       i = 0
       genome_ids[:positive].each do |genome_id|
 	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids[:positive].size}. \r" unless @o[:q]
-	 # ToDo check organism name using genome_org unless @o[:pertaxon].nil?
+	 unless @o[:pertaxon].nil?
+	    genome_taxon = genome2taxon(genome_id, @o[:pertaxon])
+	    next unless genome_org[ genome_taxon ].nil?
+	    genome_org[ genome_taxon ] = genome_id
+	 end
 	 $stderr.puts "   # Looking for any of #{@o[:positive]}" if @o[:debug]
 	 genome_file = @o[:baseout] + '.src.' + i.to_s + '.gff3'
 	 if @o[:reuse] and File.exist? genome_file
@@ -142,7 +146,10 @@ class ROCker
 	 end
       end
       print "\n" unless @o[:q]
-      genome_ids[:positive] = genome_org.values unless @o[:pertaxon].nil?
+      unless @o[:pertaxon].nil?
+	 genome_ids[:positive] = genome_org.values
+	 puts "  Using #{genome_org.size} genomes after filtering by #{@o[:pertaxon]}." unless @o[:q]
+      end
       all_genome_ids = genome_ids.values.reduce(:+).uniq
       missing = @o[:positive] - positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+)
       warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\n\n" unless missing.size==0 or @o[:genomefrx]<1.0 or not @o[:pertaxon].nil?
@@ -429,6 +436,15 @@ class ROCker
 	 genomes += doc.grep( /^DR\s+EMBL;/ ).map{ |ln| ln.split('; ')[1] }
       end
       genomes.uniq
+   end
+   def genome2taxid(genome_id)
+      ln = ebiFetch('embl', [genome_id], 'annot').split(/[\n\r]/).grep(/^FT\s+\/db_xref="taxon:/).first
+      return ln if ln.nil?
+      ln.sub(/.*"taxon:(\d+)".*/, "\\1")
+   end
+   def genome2taxon(genome_id, rank='species')
+      xml = ebiFetch('taxonomy', [genome2taxid(genome_id)], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
+      xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first.sub(/.* taxId="(\d+)".*/,"\\1")
    end
    def restcall(url, outfile=nil)
       response = RestClient.get url
