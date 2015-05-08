@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
    s.name	= 'bio-rocker'
-   s.version	= '0.2.2beta'
+   s.version	= '0.2.3beta'
    s.license	= 'artistic 2.0'
    s.summary	= 'ROCker'
    s.description = 'Detecting and quantifying functional genes in short-read metagenomic datasets'

@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update May-07-2015
+# @update May-08-2015
 #
 
 require 'rocker/blasthit'
@@ -132,7 +132,9 @@ class ROCker
 	    doc = res.split("\n").grep(/^[^#]/)
 	 end
 	 doc.each do |ln|
+	    next if ln =~ /^#/
 	    r = ln.chomp.split /\t/
+	    next if r.size < 9
 	    prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
 	    p = prots.select{ |p| @o[:positive].include? p }.first
 	    next if p.nil?
