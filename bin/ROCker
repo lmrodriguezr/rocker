@@ -7,7 +7,7 @@
 #
 
 lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
-$:.push lib if Dir.exists? lib
+$:.push lib if Dir.exist? lib
 require 'rocker'
 require 'optparse'
 
