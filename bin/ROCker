@@ -50,7 +50,8 @@ opts = OptionParser.new do |opt|
       opt.on("-P", "--positive-file PATH", "File containing the positive set (see -p), one UniProtKB ID per line. If used, -p is not required."){ |v| o[:posfile]=v }
       opt.on("-N", "--negative-file PATH", "File containing the negative set (see -n), one UniProtKB ID per line."){ |v| o[:negfile]=v }
       opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. The defline must contain UniProtKB ID. If used, -p is not required."){ |v| o[:aln]=v }
-      opt.on("-s", "--seqdepth NUMBER", "Sequencing depth to be used in building the in silico metagenome. By default: '#{ROCker.default :seqdepth}'."){ |v| o[:seqdepth]=v.to_f }
+      opt.on("-s", "--seqdepth NUMBER", "Sequencing depth (reads/bp) to be used in building the in silico metagenome. By default: '#{ROCker.default :seqdepth}'."){ |v| o[:seqdepth]=v.to_f }
+      opt.on("-l", "--readlen INTEGER", "Reads length of in silico metagenome. By default: '#{ROCker.default :readlen}'."){ |v| o[:readlen]=v.to_i }
       opt.on("-v", "--overlap NUMBER", "Minimum overlap with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_f }
       opt.on(      "--genome-frx NUMBER", "Fraction to subsample the positive set genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}"){ |v| o[:genomefrx]=v.to_f }
       opt.on(      "--per-taxon RANK", "If selected, only one genome per taxon is used to build the metagenome. Valid ranks include: species, genus, family, order, class, phylum.",
@@ -65,7 +66,7 @@ opts = OptionParser.new do |opt|
       opt.on("-G", "--grinder PATH", "Path to the grinder executable. By default: '#{ROCker.default :grinder}' (in the $PATH)."){ |v| o[:grinder]=v }
       opt.on("-M", "--muscle PATH", "Path to the muscle executable. By default: '#{ROCker.default :muscle}' (in the $PATH)."){ |v| o[:muscle]=v }
       opt.on("-B", "--blastbins PATH", "Path to the Blast+ executables. By default: '#{ROCker.default :blastbins}' (in the $PATH)."){ |v| o[:blastbins]=v }
-      opt.on(      "--grinder-cmd STR", "Command calling grinder, where %1$s: grinder bin, %2$s: input, %3$s: seq. depth, %4$s: output.",
+      opt.on(      "--grinder-cmd STR", "Command calling grinder, where %1$s: grinder bin, %2$s: input, %3$s: seq. depth (X), %4$d: read len., %5$s: output.",
 	 "By default: '#{ROCker.default :grindercmd}'."){ |v| o[:grindercmd]=v }
       opt.on("--muscle-cmd STR", "Command calling muscle, where %1$s: muscle bin, %2$s: input, %3$s: output.",
 	 "By default: '#{ROCker.default :musclecmd}'."){ |v| o[:musclecmd]=v }
