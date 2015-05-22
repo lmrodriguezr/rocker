@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
    s.name	= 'bio-rocker'
-   s.version	= '0.2.6'
+   s.version	= '0.2.7'
    s.license	= 'artistic 2.0'
    s.summary	= 'ROCker'
    s.description = 'Detecting and quantifying functional genes in short-read metagenomic datasets'
@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
    s.files	= ["lib/rocker.rb", "lib/rocker/sequence.rb", "lib/rocker/alignment.rb", "lib/rocker/blasthit.rb", "lib/rocker/rocwindow.rb", "lib/rocker/rocdata.rb", "lib/rocker/rinterface.rb"]
    s.homepage	= 'http://enve-omics.ce.gatech.edu/rocker'
    s.executables << 'ROCker'
-   s.date	= '2015-05-07'
+   s.date	= '2015-05-22'
    s.add_runtime_dependency 'rest-client', '~> 1.7.3'
 end
 

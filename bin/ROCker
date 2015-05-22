@@ -52,7 +52,7 @@ opts = OptionParser.new do |opt|
       opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. The defline must contain UniProtKB ID. If used, -p is not required."){ |v| o[:aln]=v }
       opt.on("-s", "--seqdepth NUMBER", "Sequencing depth (reads/bp) to be used in building the in silico metagenome. By default: '#{ROCker.default :seqdepth}'."){ |v| o[:seqdepth]=v.to_f }
       opt.on("-l", "--readlen INTEGER", "Reads length of in silico metagenome. By default: '#{ROCker.default :readlen}'."){ |v| o[:readlen]=v.to_i }
-      opt.on("-v", "--overlap NUMBER", "Minimum overlap with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_f }
+      opt.on("-v", "--overlap INTEGER", "Minimum overlap (in bp) with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_i }
       opt.on(      "--genome-frx NUMBER", "Fraction to subsample the positive set genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}"){ |v| o[:genomefrx]=v.to_f }
       opt.on(      "--per-taxon RANK", "If selected, only one genome per taxon is used to build the metagenome. Valid ranks include: species, genus, family, order, class, phylum.",
 	 "This option replaces --per-genus and --per-species from v0.1.*."){ |v| o[:pertaxon]=v.downcase }
