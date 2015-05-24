@@ -18,7 +18,7 @@ class ROCker
       :positive=>[], :negative=>[], :thr=>2,:genomefrx=>1.0,
 	 # ext. software
 	 :grinder=>'grinder', :muscle=>'muscle', :blastbins=>'', :seqdepth=>0.03, :readlen=>100, :minovl=>60,
-	 :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -base_name "%5$s" -dc \'-~*Nn\' -md "uniform 0.1" -mr "95 5" -rd "%4$d uniform 5"',
+	 :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*Nn\' -md "uniform 0.1" -mr "95 5" -rd "%4$d uniform 5" -base_name "%5$s"',
 	 :musclecmd=>'%1$s -in "%2$s" -out "%3$s" -quiet',
 	 :blastcmd=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
 	 :makedbcmd=>'%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"',
@@ -203,7 +203,7 @@ class ROCker
 
 		  # Run grinder (except if the temporal file is already there and can be reused)
 		  unless @o[:reuse] and File.size? @o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa"
-		     bash sprintf(@o[:grindercmd], @o[:grinder], "#{@o[:baseout]}.src.fasta.#{thr_i.to_s}", @o[:seqdepth], "#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}")
+		     bash sprintf(@o[:grindercmd], @o[:grinder], "#{@o[:baseout]}.src.fasta.#{thr_i.to_s}", @o[:seqdepth]*@o[:readlen].to_f, @o[:readlen], "#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}")
 		  end
 
 		  # Tag positives
