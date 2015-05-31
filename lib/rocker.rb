@@ -206,7 +206,7 @@ class ROCker
 		  end
 
 		  # Tag positives
-		  puts "  * tagging positive reads." unless @o[:q]
+		  puts "  * tagging positive reads [thread #{thr_i.to_s}]." unless @o[:q]
 		  Thread.current[:ifh] = File.open(@o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa", 'r')
 		  Thread.current[:ofh] = File.open(@o[:baseout] + ".mg.fasta.#{thr_i.to_s}", 'w')
 		  while Thread.current[:l]=Thread.current[:ifh].gets
