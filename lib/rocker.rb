@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update May-14-2015
+# @update May-31-2015
 #
 
 require 'rocker/blasthit'
@@ -128,8 +128,7 @@ class ROCker
 	    ifh.close
 	 else
 	    genome_file=nil unless @o[:noclean]
-	    res = ebiFetch(:embl, [genome_id], :gff3, genome_file)
-	    doc = res.split("\n").grep(/^[^#]/)
+	    doc = ebiFetch(:embl, [genome_id], :gff3, genome_file).split("\n").grep(/^[^#]/)
 	 end
 	 doc.each do |ln|
 	    next if ln =~ /^#/
@@ -223,7 +222,7 @@ class ROCker
 			      break
 			   end
 			end
-			Thread.current[:l] = ">#{Thread.current[:rd][:id]}#{Thread.current[:positive] ? "@%" : ""} ref=#{Thread.current[:rd][:genome_id]}:#{Thread.current[:rd][:from]}..#{Thread.current[:rd][:to]}#{(Thread.current[:rd][:comp]=='complement(')?'-':'+'}\n"
+			Thread.current[:l] = ">#{thr_i.to_s}_#{Thread.current[:rd][:id]}#{Thread.current[:positive] ? "@%" : ""} ref=#{Thread.current[:rd][:genome_id]}:#{Thread.current[:rd][:from]}..#{Thread.current[:rd][:to]}#{(Thread.current[:rd][:comp]=='complement(')?'-':'+'}\n"
 		     end
 		     Thread.current[:ofh].print Thread.current[:l]
 		  end
@@ -468,7 +467,13 @@ class ROCker
    def ebiFetch(db, ids, format, outfile=nil)
       url = "#{ROCker.ebirest}/dbfetch/dbfetch/#{db.to_s}/#{ids.join(",")}/#{format.to_s}"
       $stderr.puts "   # Calling: #{url}" if @o[:debug]
-      self.restcall url
+      res = self.restcall url
+      unless outfile.nil?
+	 ohf = File.open(outfile, 'w')
+	 ohf.print res
+	 ohf.close
+      end
+      res
    end
    def bash(cmd, err_msg=nil)
       o = `#{cmd} 2>&1 && echo '{'`
