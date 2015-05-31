@@ -455,7 +455,7 @@ class ROCker
       xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first.sub(/.* taxId="(\d+)".*/,"\\1")
    end
    def restcall(url, outfile=nil)
-      response = RestClient.get url
+      response = RestClient::Request.execute(:method=>:get,  :url=>url, :timeout=>600)
       raise "Unable to reach EBI REST client, error code #{response.code}." unless response.code == 200
       unless outfile.nil?
 	 ohf = File.open(outfile, 'w')
