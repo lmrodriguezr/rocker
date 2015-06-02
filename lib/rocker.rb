@@ -112,6 +112,7 @@ class ROCker
       positive_coords = {}
       genome_org = {}
       i = 0
+      $stderr.puts "   # Looking for any of #{@o[:positive]}" if @o[:debug]
       genome_ids[:positive].each do |genome_id|
 	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids[:positive].size}. \r" unless @o[:q]
 	 unless @o[:pertaxon].nil?
@@ -119,10 +120,8 @@ class ROCker
 	    next unless genome_org[ genome_taxon ].nil?
 	    genome_org[ genome_taxon ] = genome_id
 	 end
-	 $stderr.puts "   # Looking for any of #{@o[:positive]}" if @o[:debug]
 	 genome_file = @o[:baseout] + '.src.' + i.to_s + '.gff3'
 	 if @o[:reuse] and File.exist? genome_file
-	    puts "  * reusing existing file: #{genome_file}." unless @o[:q]
 	    ifh = File.open(genome_file, 'r')
 	    doc = ifh.readlines.grep(/^[^#]/)
 	    ifh.close
