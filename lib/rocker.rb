@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update May-31-2015
+# @update Jun-02-2015
 #
 
 require 'rocker/blasthit'
@@ -18,7 +18,7 @@ class ROCker
       :positive=>[], :negative=>[], :thr=>2,:genomefrx=>1.0,
 	 # ext. software
 	 :grinder=>'grinder', :muscle=>'muscle', :blastbins=>'', :seqdepth=>0.03, :readlen=>100, :minovl=>60,
-	 :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*Nn\' -md "uniform 0.1" -mr "95 5" -rd "%4$d uniform 5" -base_name "%5$s"',
+	 :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*NnKkMmRrYySsWwBbVvHhDdXx\' -md uniform 0.1 -mr 95 5 -rd %4$d uniform 5 -base_name "%5$s"',
 	 :musclecmd=>'%1$s -in "%2$s" -out "%3$s" -quiet',
 	 :blastcmd=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
 	 :makedbcmd=>'%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"',
