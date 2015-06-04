@@ -116,7 +116,7 @@ class ROCker
       coords_file = @o[:baseout] + ".src.coords"
       if @o[:reuse] and File.size? coords_file
 	 puts " * reusing coordinates: #{coords_file}." unless @o[:q]
-	 c = JSON.parse File.read(self.path), {:symbolize_names=>true}
+	 c = JSON.parse File.read(coords_file), {:symbolize_names=>true}
 	 positive_coords = c[:positive_coords]
 	 genome_org = c[:genome_org]
       else
