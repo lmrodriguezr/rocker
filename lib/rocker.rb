@@ -149,8 +149,8 @@ class ROCker
 	       prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
 	       p = prots.select{ |p| @o[:positive].include? p }.first
 	       next if p.nil?
-	       positive_coords[ r[0] ] ||= []
-	       positive_coords[ r[0] ] << {
+	       positive_coords[ r[0].to_sym ] ||= []
+	       positive_coords[ r[0].to_sym ] << {
 		  #:strand	=> r[6],
 		  :prot_id	=> p,
 		  :from	=> r[3].to_i,
@@ -228,10 +228,10 @@ class ROCker
 		  while Thread.current[:l]=Thread.current[:ifh].gets
 		     if Thread.current[:l] =~ /^>/
 			Thread.current[:rd] = /^>(?<id>\d+) reference=[A-Za-z]+\|(?<genome_id>[A-Za-z0-9_]+)\|.* position=(?<comp>complement\()?(?<from>\d+)\.\.(?<to>\d+)\)? /.match(Thread.current[:l])
-			raise "Cannot parse simulated read's defline, are you using grinder?: #{Thread.current[:l]}" if Thread.current[:rd].nil?
+			raise "Cannot parse simulated read's defline, are you using Grinder?: #{Thread.current[:l]}" if Thread.current[:rd].nil?
 			Thread.current[:positive] = false
-			positive_coords[Thread.current[:rd][:genome_id]] ||= []
-			positive_coords[Thread.current[:rd][:genome_id]].each do |gn|
+			positive_coords[Thread.current[:rd][:genome_id].to_sym] ||= []
+			positive_coords[Thread.current[:rd][:genome_id].to_sym].each do |gn|
 			   Thread.current[:left]  = Thread.current[:rd][:to].to_i - gn[:from]
 			   Thread.current[:right] = gn[:to] - Thread.current[:rd][:from].to_i
 			   if (Thread.current[:left]*Thread.current[:right] >= 0) and ([Thread.current[:left], Thread.current[:right]].min >= @o[:minovl])
