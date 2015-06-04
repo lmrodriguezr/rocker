@@ -18,7 +18,7 @@ class ROCker
       # Build
       :positive=>[], :negative=>[], :thr=>2,:genomefrx=>1.0,
 	 # ext. software
-	 :grinder=>'grinder', :muscle=>'muscle', :blastbins=>'', :seqdepth=>0.03, :readlen=>100, :minovl=>60,
+	 :grinder=>'grinder', :muscle=>'muscle', :blastbins=>'', :seqdepth=>0.03, :readlen=>100, :minovl=>50,
 	 :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*NnKkMmRrYySsWwBbVvHhDdXx\' -md uniform 0.1 -mr 95 5 -rd %4$d uniform 5 -base_name "%5$s"',
 	 :musclecmd=>'%1$s -in "%2$s" -out "%3$s" -quiet',
 	 :blastcmd=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
@@ -115,7 +115,7 @@ class ROCker
       puts "Analyzing genome data." unless @o[:q]
       coords_file = @o[:baseout] + ".src.coords"
       if @o[:reuse] and File.size? coords_file
-	 puts " * reusing coordinates: #{coords_file}." unless @o[:q]
+	 puts "  * reusing coordinates: #{coords_file}." unless @o[:q]
 	 c = JSON.parse File.read(coords_file), {:symbolize_names=>true}
 	 positive_coords = c[:positive_coords]
 	 genome_org = c[:genome_org]
@@ -226,8 +226,9 @@ class ROCker
 		  Thread.current[:ifh] = File.open(@o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa", 'r')
 		  Thread.current[:ofh] = File.open(@o[:baseout] + ".mg.fasta.#{thr_i.to_s}", 'w')
 		  while Thread.current[:l]=Thread.current[:ifh].gets
-		     Thread.current[:rd] = /^>(?<id>\d+) reference=[A-Za-z]+\|(?<genome_id>[A-Za-z0-9_]+)\|.* position=(?<comp>complement\()?(?<from>\d+)\.\.(?<to>\d+)\)? /.match(Thread.current[:l])
-		     unless Thread.current[:rd].nil?
+		     if Thread.current[:l] =~ /^>/
+			Thread.current[:rd] = /^>(?<id>\d+) reference=[A-Za-z]+\|(?<genome_id>[A-Za-z0-9_]+)\|.* position=(?<comp>complement\()?(?<from>\d+)\.\.(?<to>\d+)\)? /.match(Thread.current[:l])
+			raise "Cannot parse simulated read's defline, are you using grinder?: #{Thread.current[:l]}" if Thread.current[:rd].nil?
 			Thread.current[:positive] = false
 			positive_coords[Thread.current[:rd][:genome_id]] ||= []
 			positive_coords[Thread.current[:rd][:genome_id]].each do |gn|
@@ -238,7 +239,8 @@ class ROCker
 			      break
 			   end
 			end
-			Thread.current[:l] = ">#{thr_i.to_s}_#{Thread.current[:rd][:id]}#{Thread.current[:positive] ? "@%" : ""} ref=#{Thread.current[:rd][:genome_id]}:#{Thread.current[:rd][:from]}..#{Thread.current[:rd][:to]}#{(Thread.current[:rd][:comp]=='complement(')?'-':'+'}\n"
+			Thread.current[:l] = ">#{thr_i.to_s}_#{Thread.current[:rd][:id]}#{Thread.current[:positive] ? "@%" : ""} " +
+			   "ref=#{Thread.current[:rd][:genome_id]}:#{Thread.current[:rd][:from]}..#{Thread.current[:rd][:to]}#{(Thread.current[:rd][:comp]=='complement(')?'-':'+'}\n"
 		     end
 		     Thread.current[:ofh].print Thread.current[:l]
 		  end
