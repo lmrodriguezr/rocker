@@ -6,34 +6,18 @@
 #
 
 require 'json'
-require 'rocker/blasthit'
-require 'rocker/rocdata'
 
 class ROCker
    #================================[ Class ]
    @@EBIREST = 'http://www.ebi.ac.uk/Tools'
-   @@DEFAULTS = {
-      # General
-      :q=>false, :r=>'R', :nucl=>false, :debug=>false,
-      # Build
-      :positive=>[], :negative=>[], :thr=>2,:genomefrx=>1.0,
-	 # ext. software
-	 :grinder=>'grinder', :muscle=>'muscle', :blastbins=>'', :seqdepth=>0.03, :readlen=>100, :minovl=>50,
-	 :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*NnKkMmRrYySsWwBbVvHhDdXx\' -md uniform 0.1 -mr 95 5 -rd %4$d uniform 5 -base_name "%5$s"',
-	 :musclecmd=>'%1$s -in "%2$s" -out "%3$s" -quiet',
-	 :blastcmd=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
-	 :makedbcmd=>'%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"',
-      # Compile
-      :refine=>true, :win=>20, :minscore=>0,
-      # Filter
-      :sbj=>[],
-      # Plot
-      :color=>false, :gformat=>'pdf', :width=>9, :height=>9, :impact=>false, :transparency=>true,
-   }
+   @@DEFAULTS.merge!({:positive=>[], :negative=>[], :genomefrx=>1.0, :seqdepth=>0.03, :readlen=>100, :minovl=>50,
+      # Ext. Software
+      :grinder=>'grinder', :muscle=>'muscle',
+      :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*NnKkMmRrYySsWwBbVvHhDdXx\' -md uniform 0.1 -mr 95 5 -rd %4$d uniform 5 -base_name "%5$s"',
+      :musclecmd=>'%1$s -in "%2$s" -out "%3$s" -quiet'
+   })
    @@HAS_BUILD_GEMS = nil
    def self.ebirest() @@EBIREST ; end
-   def self.defaults() @@DEFAULTS ; end
-   def self.default(k) @@DEFAULTS[k] ; end
    def self.has_build_gems?
       return @@HAS_BUILD_GEMS unless @@HAS_BUILD_GEMS.nil?
       @@HAS_BUILD_GEMS = TRUE
@@ -46,12 +30,45 @@ class ROCker
       @@HAS_BUILD_GEMS
    end
 
-   #================================[ Instance ]
-   attr_reader :o
-   def initialize(opts)
-      @o = ROCker.defaults
-      opts.each{ |k,v| @o[k] = v }
-      RInterface.R_BIN = opts[:r] unless opts[:r].nil?
+   #================================[ Utilities ]
+   def genes2genomes(gene_ids)
+      genomes = []
+      ids = Array.new(gene_ids)
+      while ids.size>0
+	 doc = ebiFetch(:uniprotkb, ids.shift(200), :annot).split("\n")
+	 genomes += doc.grep( /^DR\s+EMBL;/ ).map{ |ln| ln.split('; ')[1] }
+      end
+      genomes.uniq
+   end
+   def genome2taxid(genome_id)
+      ln = ebiFetch('embl', [genome_id], 'annot').split(/[\n\r]/).grep(/^FT\s+\/db_xref="taxon:/).first
+      return ln if ln.nil?
+      ln.sub(/.*"taxon:(\d+)".*/, "\\1")
+   end
+   def genome2taxon(genome_id, rank='species')
+      xml = ebiFetch('taxonomy', [genome2taxid(genome_id)], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
+      xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first.sub(/.* taxId="(\d+)".*/,"\\1")
+   end
+   def restcall(url, outfile=nil)
+      $stderr.puts "   # Calling: #{url}" if @o[:debug]
+      response = RestClient::Request.execute(:method=>:get,  :url=>url, :timeout=>600)
+      raise "Unable to reach EBI REST client, error code #{response.code}." unless response.code == 200
+      unless outfile.nil?
+	 ohf = File.open(outfile, 'w')
+	 ohf.print response.to_s
+	 ohf.close
+      end
+      response.to_s
+   end
+   def ebiFetch(db, ids, format, outfile=nil)
+      url = "#{ROCker.ebirest}/dbfetch/dbfetch/#{db.to_s}/#{ids.join(",")}/#{format.to_s}"
+      res = self.restcall url
+      unless outfile.nil?
+	 ohf = File.open(outfile, 'w')
+	 ohf.print res
+	 ohf.close
+      end
+      res
    end
    
    #================================[ Build ]
@@ -295,220 +312,5 @@ class ROCker
 	 sff.each { |sf| File.unlink @o[:baseout] + sf if File.exist? @o[:baseout] + sf }
       end
    end # build!
-
-   #================================[ Compile ]
-   def compile!
-      raise "-a/--alignment is mandatory." if @o[:aln].nil?
-      raise "-a/--alignment must exist." unless File.exist? @o[:aln]
-      if @o[:table].nil?
-	 raise "-t/--table is mandatory unless -b is provided." if @o[:blast].nil?
-	 @o[:table] = "#{@o[:blast]}.table"
-      end
-      raise "-b/--blast is mandatory unless -t exists." if @o[:blast].nil? and not File.exist? @o[:table]
-      raise "-k/--rocker is mandatory." if @o[:rocker].nil?
-
-      puts "Testing environment." unless @o[:q]
-      bash "echo '' | #{@o[:r]} --vanilla", "-r/--path-to-r must be executable. Is R installed?"
-      bash "echo \"library('pROC')\" | #{@o[:r]} --vanilla", "Please install the 'pROC' library for R first."
-
-      puts "Reading files." unless @o[:q]
-      puts "  * loading alignment: #{@o[:aln]}." unless @o[:q]
-      aln = Alignment.new
-      aln.read_fasta @o[:aln]
-      
-      if File.exist? @o[:table]
-	 puts "  * reusing existing file: #{@o[:table]}." unless @o[:q]
-      else
-	 puts "  * generating table: #{@o[:table]}." unless @o[:q]
-	 blast2table(@o[:blast], @o[:table], aln, @o[:minscore])
-      end
-
-      puts "Analyzing data." unless @o[:q]
-      puts "  * computing windows." unless @o[:q]
-      data = ROCData.new(@o[:table], aln, @o[:win])
-      data.nucl = @o[:nucl]
-      if @o[:refine]
-	 puts "  * refining windows." unless @o[:q]
-	 warn "Insufficient hits to refine results." unless data.refine! @o[:table]
-      end
-      puts "  * saving ROCker file: #{@o[:rocker]}." unless @o[:q]
-      data.save @o[:rocker]
-   end # compile!
-   
-   #================================[ Filter ]
-   def filter!
-      raise "-k/--rocker is mandatory." if @o[:rocker].nil?
-      raise "-x/--query-blast is mandatory." if @o[:qblast].nil?
-      raise "-o/--out-blast is mandatory." if @o[:oblast].nil?
-      
-      puts "Reading ROCker file." unless @o[:q]
-      data = ROCData.new @o[:rocker]
-
-      puts "Filtering BLAST." unless @o[:q]
-      ih = File.open(@o[:qblast], 'r')
-      oh = File.open(@o[:oblast], 'w')
-      while ln = ih.gets
-	 bh = BlastHit.new(ln, data.aln)
-	 oh.print ln if not(bh.sfrom.nil?) and bh.bits >= data.win_at_col(bh.midpoint).thr
-      end
-      ih.close
-      oh.close
-   end # filter!
-   #================================[ Search ]
-   def search!
-      raise "-k/--rocker is mandatory." if @o[:rocker].nil?
-      raise "Code Under development..."
-      # ToDo
-      # [ ... ]
-   end # search!
-   
-   #================================[ Plot ]
-   def plot!
-      raise "-k/--rocker is mandatory." if o[:rocker].nil?
-      if @o[:table].nil?
-	 raise "-t/--table is mandatory unless -b is provided." if @o[:blast].nil?
-	 @o[:table] = "#{@o[:blast]}.table"
-      end
-      raise "-b/--blast is mandatory unless -t exists." if @o[:blast].nil? and not File.exist? @o[:table]
-
-      puts "Testing environment." unless @o[:q]
-      bash "echo '' | #{@o[:r]} --vanilla", "-r/--path-to-r must be executable. Is R installed?"
-
-      puts "Reading files." unless @o[:q]
-      puts "  * loding ROCker file: #{@o[:rocker]}." unless @o[:q]
-      data = ROCData.new @o[:rocker]
-      if File.exist? @o[:table]
-	 puts "  * reusing existing file: #{@o[:table]}." unless @o[:q]
-      else
-	 puts "  * generating table: #{@o[:table]}." unless @o[:q]
-	 blast2table(@o[:blast], @o[:table], data.aln, @o[:minscore])
-      end
-
-      puts "Plotting matches." unless @o[:q]
-      extra = @o[:gformat]=='pdf' ? "" : ", units='in', res=300"
-      @o[:gout] ||= "#{@o[:rocker]}.#{@o[:gformat]}"
-      data.rrun "#{@o[:gformat]}('#{@o[:gout]}', #{@o[:width]}, #{@o[:height]}#{extra});"
-      data.rrun "layout(c(2,1,3), heights=c(2-1/#{data.aln.size},3,1));"
-      some_thr = data.load_table! @o[:table], @o[:sbj], @o[:minscore]
-      data.rrun "par(mar=c(0,4,0,0.5)+.1);"
-      data.rrun "plot(1, t='n', xlim=c(0.5,#{data.aln.cols}+0.5), ylim=range(x$V4)+c(-0.04,0.04)*diff(range(x$V4)), xlab='', ylab='Bit score', xaxs='i', xaxt='n');"
-      data.rrun "noise <- runif(ncol(x),-.2,.2)"
-      data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".2" : "1"}), rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"})), length=0);"
-      data.rrun "points(x$V6, x$V4+noise, col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".5" : "1"}), rgb(.5,0,0,#{@o[:transparency] ? ".5" : "1"})), pch=19, cex=1/4);"
-
-      puts "Plotting windows." unless @o[:q]
-      if some_thr
-	 data.rrun "arrows(x0=w$V1, x1=w$V2, y0=w$V5, lwd=2, length=0)"
-	 data.rrun "arrows(x0=w$V2[-nrow(w)], x1=w$V1[-1], y0=w$V5[-nrow(w)], y1=w$V5[-1], lwd=2, length=0)"
-      end
-      data.rrun "legend('bottomright',legend=c('Match span','Match mid-point','Reference','Non-reference')," +
-	 "lwd=c(1,NA,1,1),pch=c(NA,19,19,19),col=c('black','black','darkblue','darkred'),ncol=4,bty='n')"
-
-      puts "Plotting alignment." unless @o[:q]
-      data.rrun "par(mar=c(0,4,0.5,0.5)+0.1);"
-      data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}),ylim=c(1,#{data.aln.seqs.size}),xlab='',ylab='Alignment',xaxs='i',xaxt='n',yaxs='i',yaxt='n',bty='n');"
-      i = 0
-      data.rrun "clr <- rainbow(26, v=1/2, s=3/4);" if @o[:color]
-      data.aln.seqs.values.each do |s|
-         color = s.aln.split(//).map{|c| c=="-" ? "'grey80'" : (@o[:sbj].include?(s.id) ? "'red'" : (@o[:color] ? "clr[#{c.ord-64}]" : "'black'"))}.join(',')
-	 data.rrun "rect((1:#{data.aln.cols-1})-0.5, rep(#{i}, #{data.aln.cols-1}), (1:#{data.aln.cols-1})+0.5, rep(#{i+1}, #{data.aln.cols-1}), col=c(#{color}), border=NA);"
-	 i += 1
-      end
-
-      puts "Plotting statistics." unless @o[:q]
-      data.rrun "par(mar=c(5,4,0,0.5)+.1);"
-      data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}),ylim=c(#{@o[:ylim].nil? ? (@o[:impact] ? "-2,.1" : "50,100") : @o[:ylim]}),xlab='Alignment position (amino acids)',ylab='Precision',xaxs='i');"
-      if some_thr
-	 sn = data.rrun "100*sum(w$tp)/(sum(w$tp)+sum(w$fn))", :float
-	 sp = data.rrun "100*sum(w$tn)/(sum(w$fp)+sum(w$tn))", :float
-	 ac = data.rrun "100*(sum(w$tp)+sum(w$tn))/(sum(w$p)+sum(w$n))", :float
-	 unless @o[:q]
-	    puts "  * sensitivity: #{sn}%"
-	    puts "  * specificity: #{sp}%"
-	    puts "  * accuracy: #{ac}%"
-	 end
-	 data.rrun "pos <- (w$V1+w$V2)/2"
-	 if @o[:impact]
-	    data.rrun "lines(pos[!is.na(w$specificity)], (w$specificity[!is.na(w$specificity)]-#{sp})*w$tp[!is.na(w$specificity)]/sum(w$tp), col='darkred', lwd=2, t='o', cex=1/3, pch=19);"
-	    data.rrun "lines(pos[!is.na(w$sensitivity)], (w$sensitivity[!is.na(w$sensitivity)]-#{sn})*w$tn[!is.na(w$sensitivity)]/sum(w$tn), col='darkgreen', lwd=2, t='o', cex=1/3, pch=19);"
-	    data.rrun "lines(pos[!is.na(w$accuracy)], (w$accuracy[!is.na(w$accuracy)]-#{ac})*(w$tp+w$tn)[!is.na(w$accuracy)]/sum(c(w$tp, w$tn)), col='darkblue', lwd=2, t='o', cex=1/3, pch=19);"
-	 else
-	    data.rrun "lines(pos[!is.na(w$specificity)], w$specificity[!is.na(w$specificity)], col='darkred', lwd=2, t='o', cex=1/3, pch=19);"
-	    data.rrun "lines(pos[!is.na(w$sensitivity)], w$sensitivity[!is.na(w$sensitivity)], col='darkgreen', lwd=2, t='o', cex=1/3, pch=19);"
-	    data.rrun "lines(pos[!is.na(w$accuracy)], w$accuracy[!is.na(w$accuracy)], col='darkblue', lwd=2, t='o', cex=1/3, pch=19);"
-	 end
-	 #data.rrun "lines(pos[!is.na(w$precision)], w$precision[!is.na(w$precision)], col='purple', lwd=2, t='o', cex=1/3, pch=19);"
-      end
-      data.rrun "legend('bottomright',legend=c('Specificity','Sensitivity','Accuracy'),lwd=2,col=c('darkred','darkgreen','darkblue'),ncol=3,bty='n')"
-      data.rrun "dev.off();"
-   end # plot!
-
-   #================================[ Utilities ]
-   def blast2table(blast_f, table_f, aln, minscore)
-      ifh = File.open(blast_f, "r")
-      ofh = File.open(table_f, "w")
-      while ln = ifh.gets
-	 bh = BlastHit.new(ln, aln)
-	 ofh.print bh.to_s if bh.bits >= minscore
-      end
-      ifh.close
-      ofh.close
-   end
-   def genes2genomes(gene_ids)
-      genomes = []
-      ids = Array.new(gene_ids)
-      while ids.size>0
-	 doc = ebiFetch(:uniprotkb, ids.shift(200), :annot).split("\n")
-	 genomes += doc.grep( /^DR\s+EMBL;/ ).map{ |ln| ln.split('; ')[1] }
-      end
-      genomes.uniq
-   end
-   def genome2taxid(genome_id)
-      ln = ebiFetch('embl', [genome_id], 'annot').split(/[\n\r]/).grep(/^FT\s+\/db_xref="taxon:/).first
-      return ln if ln.nil?
-      ln.sub(/.*"taxon:(\d+)".*/, "\\1")
-   end
-   def genome2taxon(genome_id, rank='species')
-      xml = ebiFetch('taxonomy', [genome2taxid(genome_id)], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
-      xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first.sub(/.* taxId="(\d+)".*/,"\\1")
-   end
-   def restcall(url, outfile=nil)
-      response = RestClient::Request.execute(:method=>:get,  :url=>url, :timeout=>600)
-      raise "Unable to reach EBI REST client, error code #{response.code}." unless response.code == 200
-      unless outfile.nil?
-	 ohf = File.open(outfile, 'w')
-	 ohf.print response.to_s
-	 ohf.close
-      end
-      response.to_s
-   end
-   def ebiFetch(db, ids, format, outfile=nil)
-      url = "#{ROCker.ebirest}/dbfetch/dbfetch/#{db.to_s}/#{ids.join(",")}/#{format.to_s}"
-      $stderr.puts "   # Calling: #{url}" if @o[:debug]
-      res = self.restcall url
-      unless outfile.nil?
-	 ohf = File.open(outfile, 'w')
-	 ohf.print res
-	 ohf.close
-      end
-      res
-   end
-   def bash(cmd, err_msg=nil)
-      o = `#{cmd} 2>&1 && echo '{'`
-      raise (err_msg.nil? ? "Error executing: #{cmd}\n\n#{o}" : err_msg) unless o[-2]=='{'
-      true
-   end
-end
-
-#================================[ Extensions ]
-class Numeric
-   def ordinalize
-      n= self.to_s
-      s= n[-2]=='1' ? 'th' :
-	 n[-1]=='1' ? 'st' :
-	 n[-1]=='2' ? 'nd' :
-	 n[-1]=='3' ? 'rd' : 'th'
-      n + s
-   end
-end
+end # ROCker
 
