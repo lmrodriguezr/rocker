@@ -87,7 +87,7 @@ class ROCker
 	 f.close
 	 @o[:noaln] = true
       elsif @o[:reuse] and File.size? ref_file
-	 puts "  * reusing reference sequences." unless @o[:q]
+	 puts "  * reusing positive set: #{ref_file}." unless @o[:q]
       else
 	 puts "  * downloading #{@o[:positive].size} sequence(s) in positive set." unless @o[:q]
 	 $stderr.puts "   # #{@o[:positive]}" if @o[:debug]
@@ -114,8 +114,8 @@ class ROCker
       # Locate genes
       puts "Analyzing genome data." unless @o[:q]
       coords_file = @o[:baseout] + ".src.coords"
-      if $o[:reuse] and File.size? coords_file
-	 puts " * reusing coordinates of positive set." unless @o[:q]
+      if @o[:reuse] and File.size? coords_file
+	 puts " * reusing coordinates: #{coords_file}." unless @o[:q]
 	 c = JSON.parse File.read(self.path), {:symbolize_names=>true}
 	 positive_coords = c[:positive_coords]
 	 genome_org = c[:genome_org]
