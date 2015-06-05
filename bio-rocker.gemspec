@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
    s.name	= 'bio-rocker'
-   s.version	= '0.3.4'
+   s.version	= '0.3.6'
    s.license	= 'artistic 2.0'
    s.summary	= 'ROCker'
    s.description = 'Detecting and quantifying functional genes in short-read metagenomic datasets'
@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
    s.files	+= %w{build.rb compile.rb search.rb filter.rb plot.rb}.map{|f| "lib/rocker/step/#{f}"}
    s.homepage	= 'http://enve-omics.ce.gatech.edu/rocker'
    s.executables << 'ROCker'
-   s.date	= '2015-06-04'
+   s.date	= '2015-06-05'
    s.add_runtime_dependency 'rest-client', '~> 1.7.3'
    s.add_runtime_dependency 'json', '~> 1.8.1'
 end

@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-04-2015
+# @update Jun-05-2015
 #
 
 require 'json'
@@ -246,7 +246,7 @@ class ROCker
       
       # Download genomes
       genomes_file = @o[:baseout] + '.src.fasta'
-      if @o[:reuse] and File.exist? genomes_file
+      if @o[:reuse] and File.size? genomes_file
 	 puts "  * reusing existing file: #{genomes_file}." unless @o[:q]
       else
 	 puts "  * downloading #{all_genome_ids.size} genome(s) in FastA." unless @o[:q]
@@ -262,7 +262,7 @@ class ROCker
       # Generate metagenome
       unless @o[:nomg]
 	 puts "Generating in silico metagenome" unless @o[:q]
-	 if @o[:reuse] and File.exist? @o[:baseout] + ".mg.fasta"
+	 if @o[:reuse] and File.size? @o[:baseout] + ".mg.fasta"
 	    puts "  * reusing existing file: #{@o[:baseout]}.mg.fasta." unless @o[:q]
 	 else
 	    all_src = File.readlines("#{@o[:baseout]}.src.fasta").select{ |l| l =~ /^>/ }.size
@@ -272,20 +272,22 @@ class ROCker
 	    thr_obj = []
 	    seqs_per_thr = (all_src/thrs).ceil
 	    (0 .. (thrs-1)).each do |thr_i|
-	       thr_obj << Thread.new do
-		  Thread.current[:seqs_a] = thr_i*seqs_per_thr + 1
-		  Thread.current[:seqs_b] = [Thread.current[:seqs_a] + seqs_per_thr, all_src].min
+	       output = @o[:baseout] + ".mg.fasta.#{thr_i.to_s}"
+	       thr_obj << output
+	       fork do
+		  seqs_a = thr_i*seqs_per_thr + 1
+		  seqs_b = [seqs_a + seqs_per_thr, all_src].min
 		  # Create sub-fasta
-		  Thread.current[:ofh] = File.open("#{@o[:baseout]}.src.fasta.#{thr_i.to_s}", 'w')
-		  Thread.current[:ifh] = File.open("#{@o[:baseout]}.src.fasta", 'r')
-		  Thread.current[:seq_i] = 0
-		  while Thread.current[:l] = Thread.current[:ifh].gets
-		     Thread.current[:seq_i]+=1 if Thread.current[:l] =~ /^>/
-		     break if Thread.current[:seq_i] > Thread.current[:seqs_b]
-		     Thread.current[:ofh].print Thread.current[:l] if Thread.current[:seq_i] >= Thread.current[:seqs_a]
+		  ofh = File.open("#{@o[:baseout]}.src.fasta.#{thr_i.to_s}", "w")
+		  ifh = File.open("#{@o[:baseout]}.src.fasta", "r")
+		  seq_i = 0
+		  while l = ifh.gets
+		     seq_i+=1 if l =~ /^>/
+		     break if seq_i > seqs_b
+		     ofh.print l if seq_i >= seqs_a
 		  end
-		  Thread.current[:ifh].close
-		  Thread.current[:ofh].close
+		  ifh.close
+		  ofh.close
 
 		  # Run grinder (except if the temporal file is already there and can be reused)
 		  unless @o[:reuse] and File.size? @o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa"
@@ -294,43 +296,42 @@ class ROCker
 
 		  # Tag positives
 		  puts "  * tagging positive reads [thread #{thr_i.to_s}]." unless @o[:q]
-		  Thread.current[:ifh] = File.open(@o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa", 'r')
-		  Thread.current[:ofh] = File.open(@o[:baseout] + ".mg.fasta.#{thr_i.to_s}", 'w')
-		  while Thread.current[:l]=Thread.current[:ifh].gets
-		     if Thread.current[:l] =~ /^>/
-			Thread.current[:rd] = /^>(?<id>\d+) reference=[A-Za-z]+\|(?<genome_id>[A-Za-z0-9_]+)\|.* position=(?<comp>complement\()?(?<from>\d+)\.\.(?<to>\d+)\)? /.match(Thread.current[:l])
-			raise "Cannot parse simulated read's defline, are you using Grinder?: #{Thread.current[:l]}" if Thread.current[:rd].nil?
-			Thread.current[:positive] = false
-			positive_coords[Thread.current[:rd][:genome_id].to_sym] ||= []
-			positive_coords[Thread.current[:rd][:genome_id].to_sym].each do |gn|
-			   Thread.current[:left]  = Thread.current[:rd][:to].to_i - gn[:from]
-			   Thread.current[:right] = gn[:to] - Thread.current[:rd][:from].to_i
-			   if (Thread.current[:left]*Thread.current[:right] >= 0) and ([Thread.current[:left], Thread.current[:right]].min >= @o[:minovl])
-			      Thread.current[:positive] = true
+		  ifh = File.open(@o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa", 'r')
+		  ofh = File.open(@o[:baseout] + ".mg.fasta.#{thr_i.to_s}", 'w')
+		  while l = ifh.gets
+		     if l =~ /^>/
+			rd = /^>(?<id>\d+) reference=[A-Za-z]+\|(?<genome_id>[A-Za-z0-9_]+)\|.* position=(?<comp>complement\()?(?<from>\d+)\.\.(?<to>\d+)\)? /.match(l)
+			raise "Cannot parse simulated read's defline, are you using Grinder?: #{l}" if rd.nil?
+			positive = false
+			positive_coords[rd[:genome_id].to_sym] ||= []
+			positive_coords[rd[:genome_id].to_sym].each do |gn|
+			   left  = rd[:to].to_i - gn[:from]
+			   right = gn[:to] - rd[:from].to_i
+			   if (left*right >= 0) and ([left, right].min >= @o[:minovl])
+			      positive = true
 			      break
 			   end
 			end
-			Thread.current[:l] = ">#{thr_i.to_s}_#{Thread.current[:rd][:id]}#{Thread.current[:positive] ? "@%" : ""} " +
-			   "ref=#{Thread.current[:rd][:genome_id]}:#{Thread.current[:rd][:from]}..#{Thread.current[:rd][:to]}#{(Thread.current[:rd][:comp]=='complement(')?'-':'+'}\n"
+			l = ">#{thr_i.to_s}_#{rd[:id]}#{positive ? "@%" : ""} " +
+			   "ref=#{rd[:genome_id]}:#{rd[:from]}..#{rd[:to]}#{(rd[:comp]=='complement(')?'-':'+'}\n"
 		     end
-		     Thread.current[:ofh].print Thread.current[:l]
+		     ofh.print l
 		  end
-		  Thread.current[:ofh].close
-		  Thread.current[:ifh].close
-		  Thread.current[:output] = @o[:baseout] + ".mg.fasta.#{thr_i.to_s}"
-	       end # Thread.new do
+		  ofh.close
+		  ifh.close
+	       end # fork
 	    end # (1 .. thrs).each
+	    Process.waitall
 	    # Concatenate results
 	    ofh = File.open(@o[:baseout] + ".mg.fasta", 'w')
 	    thr_obj.each do |t|
-	       t.join
-	       raise "Thread failed without error trace: #{t}" if t[:output].nil?
-	       ifh = File.open(t[:output], 'r')
+	       raise "Thread failed without error trace: #{t}" unless File.exist? t
+	       ifh = File.open(t, "r")
 	       while l = ifh.gets
 	          ofh.print l
 	       end
 	       ifh.close
-	       File.unlink t[:output]
+	       File.unlink t
 	    end
 	    ofh.close
          end
@@ -338,7 +339,7 @@ class ROCker
       # Align references
       unless @o[:noaln]
 	 puts "Aligning reference set." unless @o[:q]
-	 if @o[:reuse] and File.exist? "#{@o[:baseout]}.ref.aln"
+	 if @o[:reuse] and File.size? "#{@o[:baseout]}.ref.aln"
 	    puts "  * reusing existing file: #{@o[:baseout]}.ref.aln." unless @o[:q]
 	 else
 	    bash sprintf(@o[:musclecmd], @o[:muscle], "#{@o[:baseout]}.ref.fasta", "#{@o[:baseout]}.ref.aln")
@@ -348,7 +349,7 @@ class ROCker
       # Run BLAST 
       unless @o[:noblast]
 	 puts "Running homology search." unless @o[:q]
-	 if @o[:reuse] and File.exist? "#{@o[:baseout]}.ref.blast"
+	 if @o[:reuse] and File.size? "#{@o[:baseout]}.ref.blast"
 	    puts "  * reusing existing file: #{@o[:baseout]}.ref.blast." unless @o[:q]
 	 else
 	    puts "  * preparing database." unless @o[:q]
