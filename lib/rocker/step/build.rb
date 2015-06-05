@@ -75,7 +75,7 @@ class ROCker
       genomes_org = {}
       i = 0
       genome_ids.each do |genome_id|
-	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids.size} [thread #{thread_id}].     \r" unless @o[:q]
+	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids.size} [thread #{thread_id}]. Threads done: #{@o[:threads_done]}.     \r" unless @o[:q]
 	 unless @o[:pertaxon].nil?
 	    genome_taxon = genome2taxon(genome_id, @o[:pertaxon])
 	    genomes_org[ genome_taxon.to_sym ] ||= []
@@ -180,6 +180,7 @@ class ROCker
 	 $stderr.puts "   # Looking for: #{@o[:positive]}" if @o[:debug]
 	 $stderr.puts "   # Looking into: #{genome_ids[:positive]}" if @o[:debug]
 	 thr_obj = []
+	 @o[:threads_done] = 0
 	 (0 .. (thrs-1)).each do |thr_i|
 	    thr_obj << Thread.new do
 	       Thread.current[:ids_to_parse] = []
@@ -189,6 +190,7 @@ class ROCker
 		  Thread.current[:i] += 1
 	       end
 	       Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], genome_ids[:positive], thr_i)
+	       @o[:threads_done] += 1
 	    end
 	 end
 	 # Combine results
