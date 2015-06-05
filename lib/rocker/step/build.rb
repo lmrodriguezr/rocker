@@ -99,7 +99,7 @@ class ROCker
 	    next if r.size < 9
 	    #prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
 	    prots = r[8].split(/;/).grep(/^protein_id=/){ |xref| xref.split(/=/)[1] }
-	    p = prots.select{ |p| @o[:positive].include? p }.first
+	    p = prots.select{ |p| protein_ids.include? p }.first
 	    next if p.nil?
 	    positive_coords[ r[0].to_sym ] ||= []
 	    positive_coords[ r[0].to_sym ] << {
