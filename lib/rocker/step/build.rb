@@ -73,7 +73,7 @@ class ROCker
       end
       res
    end
-   def get_coords_from_gff3(genome_ids, protein_ids, transl_ids, thread_id)
+   def get_coords_from_gff3(genome_ids, protein_ids, transl_ids, thread_id, json_file)
       positive_coords = {}
       genomes_org = {}
       i = 0
@@ -99,7 +99,7 @@ class ROCker
 	    next if r.size < 9
 	    prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
 	    p = prots.select{ |id| protein_ids.include? id }.first
-	    trans = r[8].split(/;/).grep(/^protein_id=/){ |xref| xref.split(/=/)[1] }
+	    trans = r[8].split(/;/).grep(/^protein_id=/){ |pid| pid.split(/=/)[1] }
 	    t = trans.select{ |id|  transl_ids.include? id }.first
 	    next if p.nil? and t.nil?
 	    positive_coords[ r[0].to_sym ] ||= []
@@ -113,7 +113,9 @@ class ROCker
 	 end
       end
       print "\n" if thread_id==0 and not @o[:q]
-      {:positive_coords=>positive_coords, :genomes_org=>genomes_org}
+      ofh = File.open json_file, "w"
+      ofh.print({:positive_coords=>positive_coords, :genomes_org=>genomes_org}.to_json)
+      ofh.close
    end
    
    #================================[ Build ]
@@ -187,19 +189,21 @@ class ROCker
       else
 	 thrs = [@o[:thr], genome_ids[:positive].size].min
 	 puts "  * downloading and parsing #{genome_ids[:positive].size} GFF3 document(s) in #{thrs} threads." unless @o[:q]
-	 $stderr.puts "   # Looking for: #{@o[:positive]}" if @o[:debug]
+	 $stderr.puts "   # Looking for proteins: #{@o[:positive]}" if @o[:debug]
+	 $stderr.puts "   # Looking for translations: #{transl_ids[:positive]}" if @o[:debug]
 	 $stderr.puts "   # Looking into: #{genome_ids[:positive]}" if @o[:debug]
 	 thr_obj = []
 	 (0 .. (thrs-1)).each do |thr_i|
 	    thr_obj << Thread.new do
 	       Thread.current[:ids_to_parse] = []
 	       Thread.current[:i] = 0
-	       Thread.current[:thr_i] = Integer(thr_i)
+	       Thread.current[:thr_i] = thr_i
 	       while Thread.current[:i] < genome_ids[:positive].size
 		  Thread.current[:ids_to_parse] << genome_ids[:positive][ Thread.current[:i] ] if (Thread.current[:i] % thrs)==thr_i
 		  Thread.current[:i] += 1
 	       end
-	       Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], genome_ids[:positive], transl_ids[:positive], Thread.current[:thr_i])
+	       Thread.current[:output] = @o[:baseout] + ".src.coords." + thr_i.to_s
+	       get_coords_from_gff3(Thread.current[:ids_to_parse], @o[:positive].clone, transl_ids[:positive].clone, Thread.current[:thr_i], Thread.current[:output])
 	    end
 	 end
 	 # Combine results
@@ -208,15 +212,17 @@ class ROCker
 	 genome_org = {}
 	 thr_obj.each do |t|
 	    t.join
-	    raise "Thread failed without error trace: #{t}" if t[:output].nil?
-	    t[:output][:positive_coords].each_pair do |k,v|
+	    raise "Thread failed without error trace: #{t}" unless File.exist? t[:output]
+	    o = JSON.parse File.read(t[:output]), {:symbolize_names=>true, :create_additions=>true}
+	    o[:positive_coords].each_pair do |k,v|
 	       positive_coords[ k ] ||= []
 	       positive_coords[ k ] += v
 	    end
-	    t[:output][:genomes_org].each_pair do |k,v|
+	    o[:genomes_org].each_pair do |k,v|
 	       genomes_org[ k ] ||= []
 	       genomes_org[ k ] << v
 	    end
+	    File.unlink o[:output]
 	 end
 	 print "\n" unless @o[:q]
 
@@ -235,10 +241,11 @@ class ROCker
 	 puts "  Using #{genome_org.size} genome(s) after filtering by #{@o[:pertaxon]}." unless @o[:q]
       end
       all_genome_ids = genome_ids.values.reduce(:+).uniq
-      found = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+)
+      found = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+).compact
+      unknown_pid = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id].nil? ? b[:tran_id] : nil } }.reduce(:+).compact
       raise "Cannot find the genomic location of any provided sequence." if found.nil?
       missing = @o[:positive] - found
-      warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\n\n" unless missing.size==0 or @o[:genomefrx]<1.0
+      warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\nMissing: #{missing.size}, Unlinked translations: #{unknwn_pid.size}\n\n" unless missing.size==0 or missing.size==unknown_pid.size or @o[:genomefrx]<1.0
       
       # Download genomes
       genomes_file = @o[:baseout] + '.src.fasta'
