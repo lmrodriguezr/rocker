@@ -73,12 +73,12 @@ class ROCker
       end
       res
    end
-   def get_coords_from_gff3(genome_ids, protein_ids, thread_id)
+   def get_coords_from_gff3(genome_ids, protein_ids, transl_ids, thread_id)
       positive_coords = {}
       genomes_org = {}
       i = 0
       genome_ids.each do |genome_id|
-	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids.size} [thread #{thread_id}]. Threads done: #{@o[:threads_done]}.     \r" unless @o[:q]
+	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids.size} in first thread.  \r" if thread_id==0 and not @o[:q]
 	 unless @o[:pertaxon].nil?
 	    genome_taxon = genome2taxon(genome_id, @o[:pertaxon])
 	    genomes_org[ genome_taxon.to_sym ] ||= []
@@ -97,19 +97,22 @@ class ROCker
 	    next if ln =~ /^#/
 	    r = ln.chomp.split /\t/
 	    next if r.size < 9
-	    #prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
-	    prots = r[8].split(/;/).grep(/^protein_id=/){ |xref| xref.split(/=/)[1] }
-	    p = prots.select{ |p| protein_ids.include? p }.first
-	    next if p.nil?
+	    prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
+	    p = prots.select{ |id| protein_ids.include? id }.first
+	    trans = r[8].split(/;/).grep(/^protein_id=/){ |xref| xref.split(/=/)[1] }
+	    t = trans.select{ |id|  transl_ids.include? id }.first
+	    next if p.nil? and t.nil?
 	    positive_coords[ r[0].to_sym ] ||= []
 	    positive_coords[ r[0].to_sym ] << {
 	       :prot_id	=> p,
+	       :tran_id => t,
 	       :from	=> r[3].to_i,
 	       :to	=> r[4].to_i,
 	       :strand	=> r[6]
 	    }
 	 end
       end
+      print "\n" if thread_id==0 and not @o[:q]
       {:positive_coords=>positive_coords, :genomes_org=>genomes_org}
    end
    
@@ -187,18 +190,16 @@ class ROCker
 	 $stderr.puts "   # Looking for: #{@o[:positive]}" if @o[:debug]
 	 $stderr.puts "   # Looking into: #{genome_ids[:positive]}" if @o[:debug]
 	 thr_obj = []
-	 @o[:threads_done] = 0
 	 (0 .. (thrs-1)).each do |thr_i|
 	    thr_obj << Thread.new do
 	       Thread.current[:ids_to_parse] = []
 	       Thread.current[:i] = 0
+	       Thread.current[:thr_i] = Integer(thr_i)
 	       while Thread.current[:i] < genome_ids[:positive].size
 		  Thread.current[:ids_to_parse] << genome_ids[:positive][ Thread.current[:i] ] if (Thread.current[:i] % thrs)==thr_i
 		  Thread.current[:i] += 1
 	       end
-	       #Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], genome_ids[:positive], thr_i)
-	       Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], transl_ids[:positive], thr_i)
-	       @o[:threads_done] += 1
+	       Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], genome_ids[:positive], transl_ids[:positive], Thread.current[:thr_i])
 	    end
 	 end
 	 # Combine results
