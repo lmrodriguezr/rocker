@@ -70,6 +70,44 @@ class ROCker
       end
       res
    end
+   def get_coords_from_gff3(genome_ids, protein_ids, thread_id)
+      positive_coords = {}
+      genomes_org = {}
+      i = 0
+      genome_ids.each do |genome_id|
+	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids.size} [thread #{thread_id}].     \r" unless @o[:q]
+	 unless @o[:pertaxon].nil?
+	    genome_taxon = genome2taxon(genome_id, @o[:pertaxon])
+	    genomes_org[ genome_taxon.to_sym ] ||= []
+	    genomes_org[ genome_taxon.to_sym ] << genome_id
+	 end
+	 genome_file = @o[:baseout] + ".src." + genome_id + ".gff3"
+	 if @o[:reuse] and File.size? genome_file
+	    ifh = File.open(genome_file, 'r')
+	    doc = ifh.readlines.grep(/^[^#]/)
+	    ifh.close
+	 else
+	    genome_file=nil unless @o[:noclean]
+	    doc = ebiFetch(:embl, [genome_id], :gff3, genome_file).split("\n").grep(/^[^#]/)
+	 end
+	 doc.each do |ln|
+	    next if ln =~ /^#/
+	    r = ln.chomp.split /\t/
+	    next if r.size < 9
+	    prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
+	    p = prots.select{ |p| @o[:positive].include? p }.first
+	    next if p.nil?
+	    positive_coords[ r[0].to_sym ] ||= []
+	    positive_coords[ r[0].to_sym ] << {
+	       :prot_id	=> p,
+	       :from	=> r[3].to_i,
+	       :to	=> r[4].to_i,
+	       :strand	=> r[6]
+	    }
+	 end
+      end
+      {:positive_coords=>positive_coords, :genomes_org=>genomes_org}
+   end
    
    #================================[ Build ]
    def build!
@@ -137,48 +175,49 @@ class ROCker
 	 positive_coords = c[:positive_coords]
 	 genome_org = c[:genome_org]
       else
-	 puts "  * downloading and parsing #{genome_ids[:positive].size} GFF3 document(s)." unless @o[:q]
-	 $stderr.puts "   # #{genome_ids[:positive]}" if @o[:debug]
+	 thrs = [@o[:thr], genome_ids[:positive].size].min
+	 puts "  * downloading and parsing #{genome_ids[:positive].size} GFF3 document(s). (#{thrs} threads)" unless @o[:q]
+	 $stderr.puts "   # Looking for: #{@o[:positive]}" if @o[:debug]
+	 $stderr.puts "   # Looking into: #{genome_ids[:positive]}" if @o[:debug]
+	 thr_obj = []
+	 (0 .. (thrs-1)).each do |thr_i|
+	    thr_obj << Thread.new do
+	       Thread.current[:ids_to_parse] = []
+	       Thread.current[:i] = 0
+	       while Thread.current[:i] < genome_ids[:positive].size
+		  Thread.current[:ids_to_parse] << genome_ids[:positive][ Thread.current[:i] ] if (Thread.current[:i] % thrs)==thr_i
+		  Thread.current[:i] += 1
+	       end
+	       Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], genome_ids[:positive], thr_i)
+	    end
+	 end
+	 # Combine results
 	 positive_coords = {}
+	 genomes_org = {}
 	 genome_org = {}
-	 i = 0
-	 $stderr.puts "   # Looking for any of #{@o[:positive]}" if @o[:debug]
-	 genome_ids[:positive].each do |genome_id|
-	    print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids[:positive].size}. \r" unless @o[:q]
-	    unless @o[:pertaxon].nil?
-	       genome_taxon = genome2taxon(genome_id, @o[:pertaxon])
-	       next unless genome_org[ genome_taxon ].nil?
-	       genome_org[ genome_taxon ] = genome_id
+	 thr_obj.each do |t|
+	    t.join
+	    raise "Thread failed without error trace: #{t}" if t[:output].nil?
+	    t[:output][:positive_coords].each_pair do |k,v|
+	       positive_coords[ k ] ||= []
+	       positive_coords[ k ] << v
 	    end
-	    genome_file = @o[:baseout] + '.src.' + i.to_s + '.gff3'
-	    if @o[:reuse] and File.size? genome_file
-	       ifh = File.open(genome_file, 'r')
-	       doc = ifh.readlines.grep(/^[^#]/)
-	       ifh.close
-	    else
-	       genome_file=nil unless @o[:noclean]
-	       doc = ebiFetch(:embl, [genome_id], :gff3, genome_file).split("\n").grep(/^[^#]/)
+	    t[:output][:genomes_org].each_pair do |k,v|
+	       genomes_org[ k ] ||= []
+	       genomes_org[ k ] << v
 	    end
-	    doc.each do |ln|
-	       next if ln =~ /^#/
-	       r = ln.chomp.split /\t/
-	       next if r.size < 9
-	       prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
-	       p = prots.select{ |p| @o[:positive].include? p }.first
-	       next if p.nil?
-	       positive_coords[ r[0].to_sym ] ||= []
-	       positive_coords[ r[0].to_sym ] << {
-		  #:strand	=> r[6],
-		  :prot_id	=> p,
-		  :from	=> r[3].to_i,
-		  :to	=> r[4].to_i
-	       }
-	    end
-	    ofh = File.open(coords_file, 'w')
-	    ofh.print JSON.pretty_generate({:positive_coords=>positive_coords, :genome_org=>genome_org})
-	    ofh.close
 	 end
 	 print "\n" unless @o[:q]
+
+	 # Select one genome per taxon
+	 unless @o[:pertaxon].nil?
+	    genomes_org.each_pair{ |k,v| genome_org[ k ] = v.sample }
+	 end
+	 
+	 # Save coordinates
+	 ofh = File.open(coords_file, "w")
+	 ofh.print JSON.pretty_generate({:positive_coords=>positive_coords, :genome_org=>genome_org})
+	 ofh.close
       end
       unless @o[:pertaxon].nil?
 	 genome_ids[:positive] = genome_org.values
@@ -188,7 +227,7 @@ class ROCker
       found = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+)
       raise "Cannot find the genomic location of any provided sequence." if found.nil?
       missing = @o[:positive] - found
-      warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\n\n" unless missing.size==0 or @o[:genomefrx]<1.0 or not @o[:pertaxon].nil?
+      warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\n\n" unless missing.size==0 or @o[:genomefrx]<1.0
       
       # Download genomes
       genomes_file = @o[:baseout] + '.src.fasta'
