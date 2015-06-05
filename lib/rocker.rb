@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-04-2015
+# @update Jun-05-2015
 #
 
 require 'rocker/blasthit'
@@ -12,11 +12,15 @@ class ROCker
    #================================[ Class ]
    @@DEFAULTS = {
       # General
-      :q=>false, :r=>'R', :nucl=>false, :debug=>false,:thr=>2,
+      :q=>false, :r=>'R', :nucl=>false, :debug=>false,:thr=>2,:search=>:blast,
       # External software
-      :blastbins=>'',
-      :blastcmd=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
-      :makedbcmd=>'%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"'
+      :searchbins=>'',
+      :searchcmd=>{
+	 :blast=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
+	 :diamond=>'%1$sdiamond %2$s -q "%3$s" -d "%4$s" -o "%5$s" -t %6$d -k 1 --min-score 20 --sensitive'},
+      :makedbcmd=>{
+	 :blast=>'%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"',
+	 :diamond=>'%1$sdiamond makedb --in "%3$s" -d "%4$s"'}
    }
    def self.defaults() @@DEFAULTS ; end
    def self.default(k) @@DEFAULTS[k] ; end

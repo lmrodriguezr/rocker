@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
    s.name	= 'bio-rocker'
-   s.version	= '0.3.6'
+   s.version	= '1.0.0'
    s.license	= 'artistic 2.0'
    s.summary	= 'ROCker'
    s.description = 'Detecting and quantifying functional genes in short-read metagenomic datasets'
@@ -14,5 +14,6 @@ Gem::Specification.new do |s|
    s.date	= '2015-06-05'
    s.add_runtime_dependency 'rest-client', '~> 1.7.3'
    s.add_runtime_dependency 'json', '~> 1.8.1'
+   s.required_ruby_version = '~> 2.0'
 end
 

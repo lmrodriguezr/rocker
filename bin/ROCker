@@ -16,8 +16,8 @@ require 'optparse'
 $t = {
    'build'   => 'Creates in silico metagenomes and training sets from reference genomes.',
    'compile' => 'Identifies the most discriminant bit-score per alignment position in a set of sequence.',
-   'filter'  => 'Uses a pre-compiled set of bit-score thresholds to filter a search result.',
    'search'  => 'Uses a ROCker compilation to identify reads putatively derived from a set of sequences.',
+   'filter'  => 'Uses a pre-compiled set of bit-score thresholds to filter a search result.',
    'plot'    => 'Generates a graphical representation of the alignment, the thresholds, and the hits.',
 }
 task = (ARGV.size > 0 ? ARGV.shift : '').downcase
@@ -43,7 +43,6 @@ opts = OptionParser.new do |opt|
       opt.on("-p", "--positive ID1,ID2,ID3", Array, "Comma-separated list of UniProtKB IDs corresponding to the 'positive' training set. Required unless -P or -a are used."){ |v| o[:posori]=v }
       opt.on("-n", "--negative ID1,ID2,ID3", Array, "Comma-separated list of UniProtKB IDs corresponding to the 'negative' training set. See also -N."){ |v| o[:negative]=v }
       opt.on("-o", "--baseout PATH", "Prefix for the output files to be generated. Required."){ |v| o[:baseout]=v }
-      #opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides (currently not implemented)."){ raise "--nucleotides: This option is currently not implemented." }
       opt.on("-t", "--threads INT", "Number of threads to use. By default: #{ROCker.default :thr}."){ |v| o[:thr]=v.to_i }
       opt.separator ""
       opt.separator "+ ADVANCED BUILDING ARGUMENTS"
@@ -51,42 +50,44 @@ opts = OptionParser.new do |opt|
       opt.on("-N", "--negative-file PATH", "File containing the negative set (see -n), one UniProtKB ID per line."){ |v| o[:negfile]=v }
       opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. The defline must contain UniProtKB ID. If used, -p is not required."){ |v| o[:aln]=v }
       opt.on("-s", "--seqdepth NUMBER", "Sequencing depth (reads/bp) to be used in building the in silico metagenome. By default: '#{ROCker.default :seqdepth}'."){ |v| o[:seqdepth]=v.to_f }
-      opt.on("-l", "--readlen INTEGER", "Reads length of in silico metagenome. By default: '#{ROCker.default :readlen}'."){ |v| o[:readlen]=v.to_i }
+      opt.on("-l", "--readlen INTEGER", "Average read length of in silico metagenome (in bp). By default: '#{ROCker.default :readlen}'."){ |v| o[:readlen]=v.to_i }
       opt.on("-v", "--overlap INTEGER", "Minimum overlap (in bp) with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_i }
-      opt.on(      "--genome-frx NUMBER", "Fraction to subsample the positive set genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}"){ |v| o[:genomefrx]=v.to_f }
-      opt.on(      "--per-taxon RANK", "If selected, only one genome per taxon is used to build the metagenome. Valid ranks include: species, genus, family, order, class, phylum.",
-	 "This option replaces --per-genus and --per-species from v0.1.*."){ |v| o[:pertaxon]=v.downcase }
-      opt.on(      "--nometagenome", "Do not create metagenome. Implies --noblast. By default, metagenome is created."){ |v| o[:nomg]=v }
-      opt.on(      "--noblast", "Do not execute BLAST. By default, BLAST is executed."){ |v| o[:noblast]=v }
+      opt.on(      "--per-taxon RANK", "If selected, only one genome per taxon is used to build the metagenome. Valid ranks include: species, genus, family, order, class, phylum."){ |v| o[:pertaxon]=v.downcase }
+      opt.on(      "--genome-frx NUMBER", "Fraction to subsample genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}."){ |v| o[:genomefrx]=v.to_f }
+      opt.on(      "--nosimulate", "Do not simulate metagenome. Implies --nosearch. By default, metagenome is simulated."){ |v| o[:nosimulate]=v }
+      opt.on(      "--nosearch", "Do not execute similarity search. By default, it is executed."){ |v| o[:nosearch]=v }
       opt.on(      "--noalignment", "Do not align reference set. By default, references are aligned."){ |v| o[:noaln]=v }
       opt.on(      "--nocleanup", "Keep all intermediate files. By default, intermediate files are removed."){ |v| o[:noclean]=v }
       opt.on(      "--reuse-files", "Re-use existing result files. By default, existing files are ignored."){ |v| o[:reuse]=true }
       opt.separator ""
       opt.separator "+ EXTERNAL SOFTWARE OPTIONS"
-      opt.on("-G", "--grinder PATH", "Path to the grinder executable. By default: '#{ROCker.default :grinder}' (in the $PATH)."){ |v| o[:grinder]=v }
-      opt.on("-M", "--muscle PATH", "Path to the muscle executable. By default: '#{ROCker.default :muscle}' (in the $PATH)."){ |v| o[:muscle]=v }
-      opt.on("-B", "--blastbins PATH", "Path to the Blast+ executables. By default: '#{ROCker.default :blastbins}' (in the $PATH)."){ |v| o[:blastbins]=v }
-      opt.on(      "--grinder-cmd STR", "Command calling grinder, where %1$s: grinder bin, %2$s: input, %3$s: seq. depth (X), %4$d: read len., %5$s: output.",
-	 "By default: '#{ROCker.default :grindercmd}'."){ |v| o[:grindercmd]=v }
-      opt.on("--muscle-cmd STR", "Command calling muscle, where %1$s: muscle bin, %2$s: input, %3$s: output.",
-	 "By default: '#{ROCker.default :musclecmd}'."){ |v| o[:musclecmd]=v }
-      opt.on("--blast-cmd STR", "Command calling BLAST search, where %1$s: blast bins, %2$s: program, %3$s: input, %4$s: database, %5$s: output, %6$d: threads.",
-	 "By default: '#{ROCker.default :blastcmd}'."){ |v| o[:blastcmd]=v }
-      opt.on("--makedb-cmd STR", "Command calling BLAST format, where %1$s: blast bins, %2$s: dbtype, %3$s: input, %4$s: database.",
-	 "By default: '#{ROCker.default :makedbcmd}'."){ |v| o[:makedbcmd]=v }
+      opt.on(      "--search STR",	"Similarity search algorithm to use. Supported: 'blast' and 'diamond'. By default: '#{ROCker.default :search}'.")	{ |v| o[:search]=v.to_sym }
+      opt.on(      "--simulator STR",	"In silico metagenome simulator to use. Supported: 'grinder'. By default: '#{ROCker.default :simulator}'.")		{ |v| o[:ssimulator]=v.to_sym }
+      opt.on(      "--aligner STR",	"Multiple alignment algorithm to use. Supported: 'clustalo' and 'muscle'. By default: '#{ROCker.default :aligner}'.")	{ |v| o[:aligner]=v.to_sym }
+      opt.on(      "--search-bins PATH",	"Path to the similarity search executables. By default in the $PATH: '#{ROCker.default :searchbins}'.")		{ |v| o[:searchbins]=v }
+      opt.on(      "--simulator-bin PATH",	"Path to the simulator executable. By default in the $PATH: '#{ROCker.default(:simulatorbin).values.join("' or '")}'.")	{ |v| o[:simulatorbin]=v }
+      opt.on(      "--aligner-bin PATH",	"Path to the aligner executable. By default in the $PATH: '#{ROCker.default(:alignerbin).values.join("' or '")}'.")	{ |v| o[:alignerbin]=v }
+      opt.on(      "--search-cmd STR", "Command calling similarity search, where %1$s: binaries, %2$s: program, %3$s: input, %4$s: database, %5$s: output, %6$d: threads.",
+	 *ROCker.default(:searchcmd).keys.map{|k| "By default if --search #{k}: '#{ROCker.default(:searchcmd)[k]}'."}){ |v| o[:searchcmd]=v }
+      opt.on(      "--makedb-cmd STR", "Command calling database format for similarity search, where %1$s: binaries, %2$s: dbtype, %3$s: input, %4$s: database.",
+	 *ROCker.default(:makedbcmd).keys.map{|k| "By default if --search #{k}: '#{ROCker.default(:makedbcmd)[k]}'."}){ |v| o[:makedbcmd]=v }
+      opt.on(      "--simulator-cmd STR", "Command calling simulator, where %1$s: binary, %2$s: input, %3$s: seq. depth (X), %4$d: read len., %5$s: output.",
+	 *ROCker.default(:simulatorcmd).keys.map{|k| "By default if --simulator #{k}: '#{ROCker.default(:simulatorcmd)[k]}'."}){ |v| o[:simulatorcmd]=v }
+      opt.on("--aligner-cmd STR", "Command calling aligner, where %1$s: binary, %2$s: input, %3$s: output, %4$d: threads.",
+	 *ROCker.default(:alignercmd).keys.map{|k| "By default if --aligner #{k}: '#{ROCker.default(:alignercmd)[k]}'."}){ |v| o[:alignercmd]=v }
    when 'compile'
       opt.separator "+ COMPILATION ARGUMENTS"
       opt.on("-a", "--alignment PATH", "Protein alignment of the reference sequences. Required."){ |v| o[:aln]=v }
       opt.on("-b", "--ref-blast PATH",
       		"Tabular BLAST (blastx) of the test reads vs. the reference dataset. Required unless -t exists."){ |v| o[:blast]=v }
       opt.on("-k", "--rocker PATH", "ROCker file to be created. Required."){ |v| o[:rocker]=v }
-      opt.on(      "--nucleotides", "If set, it assumes that the input sequences are in nucleotides. By default, proteins are assumed."){ raise "--nucleotides: This option is currently not implemented." }
       opt.separator ""
       opt.separator "+ ADVANCED COMPILATION ARGUMENTS"
       opt.on("-t", "--table PATH", "Formated tabular file to be created (or reused). Required unless -b is provided."){ |v| o[:table]=v }
       opt.on(      "--min-score NUMBER", "Minimum Bit-Score to consider a hit. By default: #{ROCker.default :minscore}"){ |v| o[:minscore]=v.to_f }
       opt.on(      "--norefine", "Do not refine windows."){ o[:refine]=false }
       opt.on("-w", "--window INT", "Initial size of alignment windows (in number of AA columns). By default: #{ROCker.default :win}."){ |v| o[:win]=v.to_i }
+      opt.on(      "--reuse-files", "Re-use existing result files. By default, existing files are ignored."){ |v| o[:reuse]=true }
       opt.separator ""
       opt.separator "+ INPUT/OUTPUT"
       opt.separator "   o The input alignment (-a) MUST be in FastA format, and the IDs must"
@@ -108,14 +109,22 @@ opts = OptionParser.new do |opt|
       opt.separator "      5. Bit score threshold set for the window."
       opt.separator "     The file also contains the alignment (commented with #:)."
       opt.separator ""
+   when 'search'
+      opt.on("-k", "--rocker PATH", "ROCker file generated by the compile task (-k). Required."){ |v| o[:rocker]=v }
+      opt.on("-q", "--query PATH", "File containing the query sequences in FastA format. Required."){ |v| o[:query]=v }
+      opt.on("-o", "--out-blast PATH", "Filtered tabular BLAST to be created. Required."){ |v| o[:oblast]=v }
+      opt.separator ""
+      opt.separator "+ EXTERNAL SOFTWARE OPTIONS"
+      opt.on(      "--search STR",	"Similarity search algorithm to use. Supported: 'blast' and 'diamond'. By default: '#{ROCker.default :search}'.")	{ |v| o[:search]=v.to_sym }
+      opt.on(      "--search-bins PATH",	"Path to the similarity search executables. By default in the $PATH: '#{ROCker.default :searchbins}'.")		{ |v| o[:searchbins]=v }
+      opt.on(      "--search-cmd STR", "Command calling similarity search, where %1$s: binaries, %2$s: program, %3$s: input, %4$s: database, %5$s: output, %6$d: threads.",
+	 *ROCker.default(:searchcmd).keys.map{|k| "By default if --search #{k}: '#{ROCker.default(:searchcmd)[k]}'."}){ |v| o[:searchcmd]=v }
+      opt.on(      "--makedb-cmd STR", "Command calling database format for similarity search, where %1$s: binaries, %2$s: dbtype, %3$s: input, %4$s: database.",
+	 *ROCker.default(:makedbcmd).keys.map{|k| "By default if --search #{k}: '#{ROCker.default(:makedbcmd)[k]}'."}){ |v| o[:makedbcmd]=v }
    when 'filter'
       opt.separator "+ FILTERING ARGUMENTS"
       opt.on("-k", "--rocker PATH", "ROCker file generated by the compile task (-k). Required."){ |v| o[:rocker]=v }
       opt.on("-x", "--query-blast PATH", "Tabular BLAST (blastx) of the query reads vs. the reference dataset. Required."){ |v| o[:qblast]=v }
-      opt.on("-o", "--out-blast PATH", "Filtered tabular BLAST to be created. Required."){ |v| o[:oblast]=v }
-   when 'search'
-      opt.on("-k", "--rocker PATH", "ROCker file generated by the compile task (-k). Required."){ |v| o[:rocker]=v }
-      opt.on("-q", "--query PATH", "File containing the query sequences in FastA format. Required."){ |v| o[:query]=v }
       opt.on("-o", "--out-blast PATH", "Filtered tabular BLAST to be created. Required."){ |v| o[:oblast]=v }
    when 'plot'
       opt.separator "+ PLOTTING ARGUMENTS"
@@ -128,7 +137,7 @@ opts = OptionParser.new do |opt|
       opt.on("-t", "--table PATH", "Formated tabular file to be created (or reused). Required unless -b is provided."){ |v| o[:table]=v }
       opt.on(      "--color", "Color alignment by amino acid."){ o[:color]=true }
       opt.on(      "--no-transparency", "Do not use (semi-)transparencies."){ |v| o[:transparency] = v }
-      opt.on(      "--min-score NUMBER", "Minimum Bit-Score to consider a hit. By default: #{ROCker.default :minscore}"){ |v| o[:minscore]=v.to_f }
+      opt.on(      "--min-score NUMBER", "Minimum Bit-Score to consider a hit. By default: #{ROCker.default :minscore}."){ |v| o[:minscore]=v.to_f }
       opt.on(      "--stats-impact", "Plot impact on statistics, instead of absolute values per window."){ o[:impact]=true }
       opt.on(      "--stats-ylim STRING", "Limits of the Y-axis in the bottom panel. By default: '-2,.1' if --stats-impact is set, '50,100' otherwise."){ |v| o[:ylim]=v }
       opt.on("-s", "--subject SBJ1,SBJ2,...", Array,

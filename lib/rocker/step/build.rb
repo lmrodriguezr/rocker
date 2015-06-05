@@ -12,9 +12,11 @@ class ROCker
    @@EBIREST = 'http://www.ebi.ac.uk/Tools'
    @@DEFAULTS.merge!({:positive=>[], :negative=>[], :genomefrx=>1.0, :seqdepth=>0.03, :readlen=>100, :minovl=>50,
       # Ext. Software
-      :grinder=>'grinder', :muscle=>'muscle',
-      :grindercmd=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*NnKkMmRrYySsWwBbVvHhDdXx\' -md uniform 0.1 -mr 95 5 -rd %4$d uniform 5 -base_name "%5$s"',
-      :musclecmd=>'%1$s -in "%2$s" -out "%3$s" -quiet'
+      :aligner=>:clustalo, :simulator=>:grinder,
+      :simulatorbin=>{:grinder=>'grinder'},
+      :simulatorcmd=>{:grinder=>'%1$s -reference_file "%2$s" -cf "%3$f" -dc \'-~*NnKkMmRrYySsWwBbVvHhDdXx\' -md uniform 0.1 -mr 95 5 -rd %4$d uniform 5 -base_name "%5$s"'},
+      :alignerbin=>{:muscle=>'muscle', :clustalo=>'clustalo'},
+      :alignercmd=>{:muscle=>'%1$s -in "%2$s" -out "%3$s" -quiet', :clustalo=>'%1$s -i "%2$s" -o "%3$s" --threads=%4$d --force'}
    })
    @@HAS_BUILD_GEMS = nil
    def self.ebirest() @@EBIREST ; end
@@ -122,7 +124,13 @@ class ROCker
    def build!
       # Check requirements
       puts "Testing environment." unless @o[:q]
-      @o[:noblast]=true if @o[:nomg]
+      @o[:searchcmd] = @o[:searchcmd][@o[:search]] if @o[:searchcmd].is_a? Hash
+      @o[:makedbcmd] = @o[:makedbcmd][@o[:search]] if @o[:makedbcmd].is_a? Hash
+      @o[:alignercmd] = @o[:alignercmd][@o[:aligner]] if @o[:alignercmd].is_a? Hash
+      @o[:simulatorcmd] = @o[:simulatorcmd][@o[:simulator]] if @o[:simulatorcmd].is_a? Hash
+      @o[:alignerbin] = @o[:alignerbin][@o[:aligner]] if @o[:alignerbin].is_a? Hash
+      @o[:simulatorbin] = @o[:simulatorbin][@o[:simulator]] if @o[:simulatorbin].is_a? Hash
+      @o[:nosearch]=true if @o[:nosimulate]
       raise "Unsatisfied requirements, please see the help message (-h)." unless ROCker.has_build_gems?
       @o[:positive] += @o[:posori] unless @o[:posori].nil?
       @o[:positive] += File.readlines(@o[:posfile]).map{ |l| l.chomp } unless @o[:posfile].nil?
@@ -138,9 +146,18 @@ class ROCker
 	 warn "\nWARNING: Positive set contains only one sequence, turning off alignment.\n\n"
 	 @o[:noaln] = true
       end
-      self.bash "#{@o[:grinder]} --version", "-G/--grinder must be executable. Is Grinder installed?" unless @o[:nomg]
-      self.bash "#{@o[:muscle]} -version", "-M/--muscle must be executable. Is Muscle installed?" unless @o[:noaln]
-      self.bash "#{@o[:blastbins]}makeblastdb -version", "-B/--blastbins must contain executables. Is BLAST+ installed?" unless @o[:noblast]
+      unless @o[:nosimulate]
+	 self.bash "#{@o[:simulatorbin]} --version", "--simulator-bin must be executable. Is Grinder installed?" if @o[:simulator]==:grinder
+      end
+      unless @o[:noaln]
+	 self.bash "#{@o[:alignerbin]} -version", "--aligner-bin must be executable. Is Muscle installed?" if @o[:aligner]==:muscle
+	 self.bash "#{@o[:alignerbin]} --version", "--aligner-bin must be executable. Is ClustalOmega installed?" if @o[:aligner]==:clustalo
+      end
+      unless @o[:nosearch]
+	 self.bash "#{@o[:searchbins]}makeblastdb -version", "--search-bins must contain executables. Is BLAST+ installed?" if @o[:search]==:blast
+	 self.bash "#{@o[:searchbins]}diamond --help", "--search-bins must contain executables. Is DIAMOND installed?" if @o[:search]==:diamond
+      end
+
       # Download genes
       puts "Downloading gene data." unless @o[:q]
       ref_file = @o[:baseout] + ".ref.fasta"
@@ -222,12 +239,10 @@ class ROCker
 	    end
 	    File.unlink t
 	 end
-
 	 # Select one genome per taxon
 	 unless @o[:pertaxon].nil?
 	    genomes_org.each_pair{ |k,v| genome_org[ k ] = v.sample.first }
 	 end
-	 
 	 # Save coordinates
 	 ofh = File.open(coords_file, "w")
 	 ofh.print JSON.pretty_generate({:positive_coords=>positive_coords, :genome_org=>genome_org})
@@ -260,14 +275,14 @@ class ROCker
       end
       
       # Generate metagenome
-      unless @o[:nomg]
+      unless @o[:nosimulate]
 	 puts "Generating in silico metagenome" unless @o[:q]
 	 if @o[:reuse] and File.size? @o[:baseout] + ".mg.fasta"
 	    puts "  * reusing existing file: #{@o[:baseout]}.mg.fasta." unless @o[:q]
 	 else
 	    all_src = File.readlines("#{@o[:baseout]}.src.fasta").select{ |l| l =~ /^>/ }.size
 	    thrs = [@o[:thr], all_src].min
-	    puts "  * running grinder and tagging positive reads in #{thrs} threads." unless @o[:q]
+	    puts "  * simulating metagenomes and tagging positive reads in #{thrs} threads." unless @o[:q]
 	    $stderr.puts "   # #{positive_coords}" if @o[:debug]
 	    thr_obj = []
 	    seqs_per_thr = (all_src/thrs).ceil
@@ -289,9 +304,9 @@ class ROCker
 		  ifh.close
 		  ofh.close
 
-		  # Run grinder (except if the temporal file is already there and can be reused)
+		  # Run simulator (except if the temporal file is already there and can be reused)
 		  unless @o[:reuse] and File.size? @o[:baseout] + ".mg.tmp.#{thr_i.to_s}-reads.fa"
-		     bash sprintf(@o[:grindercmd], @o[:grinder], "#{@o[:baseout]}.src.fasta.#{thr_i.to_s}", @o[:seqdepth]*@o[:readlen].to_f, @o[:readlen], "#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}")
+		     bash sprintf(@o[:simulatorcmd], @o[:simulatorbin], "#{@o[:baseout]}.src.fasta.#{thr_i.to_s}", @o[:seqdepth]*@o[:readlen].to_f, @o[:readlen], "#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}")
 		  end
 
 		  # Tag positives
@@ -335,35 +350,38 @@ class ROCker
 	    end
 	    ofh.close
          end
-      end # unless @o[:nomg]
+      end # unless @o[:nosimulate]
+      
       # Align references
       unless @o[:noaln]
 	 puts "Aligning reference set." unless @o[:q]
 	 if @o[:reuse] and File.size? "#{@o[:baseout]}.ref.aln"
 	    puts "  * reusing existing file: #{@o[:baseout]}.ref.aln." unless @o[:q]
 	 else
-	    bash sprintf(@o[:musclecmd], @o[:muscle], "#{@o[:baseout]}.ref.fasta", "#{@o[:baseout]}.ref.aln")
+	    bash sprintf(@o[:alignercmd], @o[:alignerbin], "#{@o[:baseout]}.ref.fasta", "#{@o[:baseout]}.ref.aln", @o[:thr])
 	    puts "  +--\n  | IMPORTANT NOTE: Manually checking the alignment before\n  | the 'compile' step is *strongly* encouraged.\n  +--\n" unless @o[:q]
 	 end
       end
-      # Run BLAST 
-      unless @o[:noblast]
+      
+      # Run similarity search
+      unless @o[:nosearch]
 	 puts "Running homology search." unless @o[:q]
 	 if @o[:reuse] and File.size? "#{@o[:baseout]}.ref.blast"
 	    puts "  * reusing existing file: #{@o[:baseout]}.ref.blast." unless @o[:q]
 	 else
 	    puts "  * preparing database." unless @o[:q]
-	    bash sprintf(@o[:makedbcmd], @o[:blastbins], (@o[:nucl]?'nucl':'prot'), "#{@o[:baseout]}.ref.fasta", "#{@o[:baseout]}.ref")
-	    puts "  * running BLAST." unless @o[:q]
-	    bash sprintf(@o[:blastcmd], @o[:blastbins], (@o[:nucl]?'blastn':'blastx'), "#{@o[:baseout]}.mg.fasta", "#{@o[:baseout]}.ref", "#{@o[:baseout]}.ref.blast", @o[:thr])
+	    bash sprintf(@o[:makedbcmd][@o[:search]], @o[:searchbins], 'prot', "#{@o[:baseout]}.ref.fasta", "#{@o[:baseout]}.ref")
+	    puts "  * running similarity search." unless @o[:q]
+	    bash sprintf(@o[:searchcmd][@o[:search]], @o[:searchbins], 'blastx', "#{@o[:baseout]}.mg.fasta", "#{@o[:baseout]}.ref", "#{@o[:baseout]}.ref.blast", @o[:thr])
 	 end
       end
+      
       # Clean
       unless @o[:noclean]
 	 puts "Cleaning." unless @o[:q]
 	 sff  = %w{.src.xml .src.fasta}
-	 sff += %w{.mg.tmp-reads.fa .mg.tmp-ranks.txt} unless @o[:nomg]
-	 sff += %w{.ref.phr .ref.pin .ref.psq} unless @o[:noblast]
+	 sff += %w{.mg.tmp-reads.fa .mg.tmp-ranks.txt} unless @o[:nosimulate]
+	 sff += %w{.ref.phr .ref.pin .ref.psq} unless @o[:nosearch]
 	 sff.each { |sf| File.unlink @o[:baseout] + sf if File.exist? @o[:baseout] + sf }
       end
    end # build!
