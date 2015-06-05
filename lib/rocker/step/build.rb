@@ -36,7 +36,10 @@ class ROCker
       ids = Array.new(gene_ids)
       while ids.size>0
 	 doc = ebiFetch(:uniprotkb, ids.shift(200), :annot).split("\n")
-	 genomes += doc.grep( /^DR\s+EMBL;/ ).map{ |ln| ln.split('; ')[1] }
+	 genomes += doc.grep( /^DR\s+EMBL;/ ).map do |ln|
+	    r=ln.split('; ')
+	    {:genome_id=>r[1], :transl_id=>r[2]}
+	 end
       end
       genomes.uniq
    end
@@ -94,7 +97,8 @@ class ROCker
 	    next if ln =~ /^#/
 	    r = ln.chomp.split /\t/
 	    next if r.size < 9
-	    prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
+	    #prots = r[8].split(/;/).grep(/^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
+	    prots = r[8].split(/;/).grep(/^protein_id=/){ |xref| xref.split(/=/)[1] }
 	    p = prots.select{ |p| @o[:positive].include? p }.first
 	    next if p.nil?
 	    positive_coords[ r[0].to_sym ] ||= []
@@ -154,11 +158,14 @@ class ROCker
 	 f.close
       end
       genome_ids = {:positive=>[], :negative=>[]}
+      transl_ids = {:positive=>[], :negative=>[]}
       [:positive, :negative].each do |set|
          unless @o[set].size==0
 	    puts "  * linking genomes from #{@o[set].size} #{set.to_s} sequence(s)." unless @o[:q]
 	    $stderr.puts "   # #{@o[set]}" if @o[:debug]
-	    genome_ids[set] = genes2genomes(@o[set])
+	    r = genes2genomes(@o[set])
+	    genome_ids[set] = r.map{|i| i[:genome_id]}.uniq
+	    transl_ids[set] = r.map{|i| i[:transl_id]}.uniq
 	 end
       end
       raise "No genomes associated with the positive set." if genome_ids[:positive].size==0
@@ -189,7 +196,8 @@ class ROCker
 		  Thread.current[:ids_to_parse] << genome_ids[:positive][ Thread.current[:i] ] if (Thread.current[:i] % thrs)==thr_i
 		  Thread.current[:i] += 1
 	       end
-	       Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], genome_ids[:positive], thr_i)
+	       #Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], genome_ids[:positive], thr_i)
+	       Thread.current[:output] = get_coords_from_gff3(Thread.current[:ids_to_parse], transl_ids[:positive], thr_i)
 	       @o[:threads_done] += 1
 	    end
 	 end
