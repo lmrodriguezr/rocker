@@ -156,7 +156,7 @@ class ROCker
       genome_ids = {:positive=>[], :negative=>[]}
       [:positive, :negative].each do |set|
          unless @o[set].size==0
-	    puts "  * gathering genomes from #{@o[set].size} #{set.to_s} sequence(s)." unless @o[:q]
+	    puts "  * linking genomes from #{@o[set].size} #{set.to_s} sequence(s)." unless @o[:q]
 	    $stderr.puts "   # #{@o[set]}" if @o[:debug]
 	    genome_ids[set] = genes2genomes(@o[set])
 	 end
@@ -176,7 +176,7 @@ class ROCker
 	 genome_org = c[:genome_org]
       else
 	 thrs = [@o[:thr], genome_ids[:positive].size].min
-	 puts "  * downloading and parsing #{genome_ids[:positive].size} GFF3 document(s). (#{thrs} threads)" unless @o[:q]
+	 puts "  * downloading and parsing #{genome_ids[:positive].size} GFF3 document(s) in #{thrs} threads." unless @o[:q]
 	 $stderr.puts "   # Looking for: #{@o[:positive]}" if @o[:debug]
 	 $stderr.puts "   # Looking into: #{genome_ids[:positive]}" if @o[:debug]
 	 thr_obj = []
@@ -200,7 +200,7 @@ class ROCker
 	    raise "Thread failed without error trace: #{t}" if t[:output].nil?
 	    t[:output][:positive_coords].each_pair do |k,v|
 	       positive_coords[ k ] ||= []
-	       positive_coords[ k ] << v
+	       positive_coords[ k ] += v
 	    end
 	    t[:output][:genomes_org].each_pair do |k,v|
 	       genomes_org[ k ] ||= []
@@ -211,7 +211,7 @@ class ROCker
 
 	 # Select one genome per taxon
 	 unless @o[:pertaxon].nil?
-	    genomes_org.each_pair{ |k,v| genome_org[ k ] = v.sample }
+	    genomes_org.each_pair{ |k,v| genome_org[ k ] = v.sample.first }
 	 end
 	 
 	 # Save coordinates
@@ -252,7 +252,7 @@ class ROCker
 	 else
 	    all_src = File.readlines("#{@o[:baseout]}.src.fasta").select{ |l| l =~ /^>/ }.size
 	    thrs = [@o[:thr], all_src].min
-	    puts "  * running grinder and tagging positive reads (#{thrs} threads)." unless @o[:q]
+	    puts "  * running grinder and tagging positive reads in #{thrs} threads." unless @o[:q]
 	    $stderr.puts "   # #{positive_coords}" if @o[:debug]
 	    thr_obj = []
 	    seqs_per_thr = (all_src/thrs).ceil
