@@ -238,8 +238,8 @@ class ROCker
 	 puts "  Using #{genome_org.size} genome(s) after filtering by #{@o[:pertaxon]}." unless @o[:q]
       end
       all_genome_ids = genome_ids.values.reduce(:+).uniq
-      found = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+).compact
-      unknown_pid = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id].nil? ? b[:tran_id] : nil } }.reduce(:+).compact
+      found = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id] } }.reduce(:+).compact.uniq
+      unknown_pid = positive_coords.values.map{ |a| a.map{ |b| b[:prot_id].nil? ? b[:tran_id] : nil } }.reduce(:+).compact.uniq
       raise "Cannot find the genomic location of any provided sequence." if found.nil?
       missing = @o[:positive] - found
       warn "\nWARNING: Cannot find genomic location of sequence(s) #{missing.join(',')}.\nMissing: #{missing.size}, Unlinked translations: #{unknown_pid.size}\n\n" unless missing.size==0 or missing.size==unknown_pid.size or @o[:genomefrx]<1.0
