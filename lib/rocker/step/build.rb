@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-05-2015
+# @update Jun-07-2015
 #
 
 require 'json'
@@ -370,9 +370,9 @@ class ROCker
 	    puts "  * reusing existing file: #{@o[:baseout]}.ref.blast." unless @o[:q]
 	 else
 	    puts "  * preparing database." unless @o[:q]
-	    bash sprintf(@o[:makedbcmd][@o[:search]], @o[:searchbins], 'prot', "#{@o[:baseout]}.ref.fasta", "#{@o[:baseout]}.ref")
+	    bash sprintf(@o[:makedbcmd], @o[:searchbins], 'prot', "#{@o[:baseout]}.ref.fasta", "#{@o[:baseout]}.ref")
 	    puts "  * running similarity search." unless @o[:q]
-	    bash sprintf(@o[:searchcmd][@o[:search]], @o[:searchbins], 'blastx', "#{@o[:baseout]}.mg.fasta", "#{@o[:baseout]}.ref", "#{@o[:baseout]}.ref.blast", @o[:thr])
+	    bash sprintf(@o[:searchcmd], @o[:searchbins], 'blastx', "#{@o[:baseout]}.mg.fasta", "#{@o[:baseout]}.ref", "#{@o[:baseout]}.ref.blast", @o[:thr])
 	 end
       end
       
