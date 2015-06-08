@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-07-2015
+# @update Jun-08-2015
 #
 
 require 'json'
@@ -365,7 +365,7 @@ class ROCker
       
       # Run similarity search
       unless @o[:nosearch]
-	 puts "Running homology search." unless @o[:q]
+	 puts "Running similarity search." unless @o[:q]
 	 if @o[:reuse] and File.size? "#{@o[:baseout]}.ref.blast"
 	    puts "  * reusing existing file: #{@o[:baseout]}.ref.blast." unless @o[:q]
 	 else
