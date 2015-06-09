@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-08-2015
+# @update Jun-09-2015
 #
 
 require 'json'
@@ -52,7 +52,9 @@ class ROCker
    end
    def genome2taxon(genome_id, rank='species')
       xml = ebiFetch('taxonomy', [genome2taxid(genome_id)], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
-      xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first.sub(/.* taxId="(\d+)".*/,"\\1")
+      v = xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first
+      return "no-taxon-#{(0...12).map { (65 + rand(26)).chr }.join}" if v.nil?
+      v.sub(/.* taxId="(\d+)".*/,"\\1")
    end
    def restcall(url, outfile=nil)
       $stderr.puts "   # Calling: #{url}" if @o[:debug]
