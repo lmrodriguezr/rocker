@@ -51,8 +51,11 @@ class ROCker
       ln.sub(/.*"taxon:(\d+)".*/, "\\1")
    end
    def genome2taxon(genome_id, rank='species')
-      xml = ebiFetch('taxonomy', [genome2taxid(genome_id)], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
-      v = xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first
+      v=genome2taxid(genome_id)
+      unless v.nil?
+	 xml = ebiFetch('taxonomy', [genome2taxid(genome_id)], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
+	 v = xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first
+      end
       return "no-taxon-#{(0...12).map { (65 + rand(26)).chr }.join}" if v.nil?
       v.sub(/.* taxId="(\d+)".*/,"\\1")
    end
