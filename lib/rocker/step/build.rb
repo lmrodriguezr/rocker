@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-09-2015
+# @update Jun-11-2015
 #
 
 require 'json'
@@ -47,17 +47,19 @@ class ROCker
    end
    def genome2taxid(genome_id)
       ln = ebiFetch('embl', [genome_id], 'annot').split(/[\n\r]/).grep(/^FT\s+\/db_xref="taxon:/).first
-      return ln if ln.nil?
-      ln.sub(/.*"taxon:(\d+)".*/, "\\1")
+      return nil if ln.nil?
+      ln.sub!(/.*"taxon:(\d+)".*/, "\\1")
+      return nil unless ln =~ /^\d+$/
+      ln
    end
    def genome2taxon(genome_id, rank='species')
-      v=genome2taxid(genome_id)
+      v = genome2taxid(genome_id)
       unless v.nil?
-	 xml = ebiFetch('taxonomy', [genome2taxid(genome_id)], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
+	 xml = ebiFetch('taxonomy', [v], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
 	 v = xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first
+	 v.sub!(/.* taxId="(\d+)".*/,"\\1") unless v.nil?
       end
-      return "no-taxon-#{(0...12).map { (65 + rand(26)).chr }.join}" if v.nil?
-      v.sub(/.* taxId="(\d+)".*/,"\\1")
+      return "no-taxon-#{(0...12).map { (65 + rand(26)).chr }.join}" if v.nil? or not v =~ /^\d+$/
    end
    def restcall(url, outfile=nil)
       $stderr.puts "   # Calling: #{url}" if @o[:debug]
