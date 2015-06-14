@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-11-2015
+# @update Jun-14-2015
 #
 
 require 'json'
@@ -59,7 +59,8 @@ class ROCker
 	 v = xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first
 	 v.sub!(/.* taxId="(\d+)".*/,"\\1") unless v.nil?
       end
-      return "no-taxon-#{(0...12).map { (65 + rand(26)).chr }.join}" if v.nil? or not v =~ /^\d+$/
+      return "no-taxon-#{(0...12).map { (65 + rand(26)).chr }.join}" if v.nil? or v !~ /^\d+$/
+      v
    end
    def restcall(url, outfile=nil)
       $stderr.puts "   # Calling: #{url}" if @o[:debug]
@@ -89,9 +90,9 @@ class ROCker
       genome_ids.each do |genome_id|
 	 print "  * scanning #{(i+=1).ordinalize} genome out of #{genome_ids.size} in first thread.  \r" if thread_id==0 and not @o[:q]
 	 unless @o[:pertaxon].nil?
-	    genome_taxon = genome2taxon(genome_id, @o[:pertaxon])
-	    genomes_org[ genome_taxon.to_sym ] ||= []
-	    genomes_org[ genome_taxon.to_sym ] << genome_id
+	    genome_taxon = genome2taxon(genome_id, @o[:pertaxon]).to_sym
+	    genomes_org[ genome_taxon ] ||= []
+	    genomes_org[ genome_taxon ] << genome_id
 	 end
 	 genome_file = @o[:baseout] + ".src." + genome_id + ".gff3"
 	 if @o[:reuse] and File.size? genome_file
