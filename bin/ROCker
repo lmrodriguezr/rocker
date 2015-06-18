@@ -3,7 +3,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update May-08-2015
+# @update Jun-15-2015
 #
 
 lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
@@ -40,7 +40,7 @@ opts = OptionParser.new do |opt|
 	 opt.separator ""
       end
       opt.separator "+ BUILDING ARGUMENTS"
-      opt.on("-p", "--positive ID1,ID2,ID3", Array, "Comma-separated list of UniProtKB IDs corresponding to the 'positive' training set. Required unless -P or -a are used."){ |v| o[:posori]=v }
+      opt.on("-p", "--positive ID1,ID2,ID3", Array, "Comma-separated list of UniProtKB IDs corresponding to the 'positive' training set. Required unless -P or -a are used."){ |v| o[:positive]=v }
       opt.on("-n", "--negative ID1,ID2,ID3", Array, "Comma-separated list of UniProtKB IDs corresponding to the 'negative' training set. See also -N."){ |v| o[:negative]=v }
       opt.on("-o", "--baseout PATH", "Prefix for the output files to be generated. Required."){ |v| o[:baseout]=v }
       opt.separator ""
@@ -52,7 +52,6 @@ opts = OptionParser.new do |opt|
       opt.on("-l", "--readlen INTEGER", "Average read length of in silico metagenome (in bp). By default: '#{ROCker.default :readlen}'."){ |v| o[:readlen]=v.to_i }
       opt.on("-v", "--overlap INTEGER", "Minimum overlap (in bp) with reference gene to tag a read as positive. By default: '#{ROCker.default :minovl}'."){ |v| o[:minovl]=v.to_i }
       opt.on(      "--per-taxon RANK", "If selected, only one genome per taxon is used to build the metagenome. Valid ranks include: species, genus, family, order, class, phylum."){ |v| o[:pertaxon]=v.downcase }
-      opt.on(      "--genome-frx NUMBER", "Fraction to subsample genomes to generate the metagenome. By default: #{ROCker.default :genomefrx}."){ |v| o[:genomefrx]=v.to_f }
       opt.on(      "--nosimulate", "Do not simulate metagenome. Implies --nosearch. By default, metagenome is simulated."){ |v| o[:nosimulate]=v }
       opt.on(      "--nosearch", "Do not execute similarity search. By default, it is executed."){ |v| o[:nosearch]=v }
       opt.on(      "--noalignment", "Do not align reference set. By default, references are aligned."){ |v| o[:noaln]=v }
