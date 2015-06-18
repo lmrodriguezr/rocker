@@ -150,7 +150,7 @@ class ROCker
 	 end
       end
       raise "No genomes associated with the positive set." if protein_set[:+].genomes.empty?
-      genome_set = {:+=>GenomeSet.new(self, protein_set[:+].genomes), :-=>GenomeSet.new(self, protein_set[:-])}
+      genome_set = {:+ => GenomeSet.new(self, protein_set[:+].genomes), :- => GenomeSet.new(self, protein_set[:-])}
       
       # Locate genes
       puts "Analyzing genome data." unless @o[:q]
