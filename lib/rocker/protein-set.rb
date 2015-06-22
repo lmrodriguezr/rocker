@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-15-2015
+# @update Jun-22-2015
 #
 
 require 'rocker/alignment'
@@ -68,12 +68,16 @@ class ProteinSet
       @tranids.values.reduce(:+).uniq
    end
    def in_coords(coords)
-      coords.values.map do |locations|
+      coords.keys.map do |genome|
+	 locations = coords[ genome ]
 	 locations.map do |loc|
-	    if loc[:prot_id].nil?
-	       @tranids.rassoc(loc[:tran_id]).first unless loc[:tran_id].nil?
-	    else
+	    if not loc[:prot_id].nil?
 	       loc[:prot_id] if self.include? loc[:prot_id]
+	    elsif not loc[:tran_id].nil? and not @tranids.rassoc(loc[:tran_id]).nil?
+	       @tranids.rassoc(loc[:tran_id]).first
+	    else
+	       warn "Warning: Impossible to resolve protein located in '#{genome}' at: #{loc}."
+	       nil
 	    end
 	 end
       end.reduce(:+).compact.uniq

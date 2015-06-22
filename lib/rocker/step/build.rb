@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-14-2015
+# @update Jun-22-2015
 #
 
 require 'json'
@@ -150,7 +150,7 @@ class ROCker
 	 end
       end
       raise "No genomes associated with the positive set." if protein_set[:+].genomes.empty?
-      genome_set = {:+ => GenomeSet.new(self, protein_set[:+].genomes), :- => GenomeSet.new(self, protein_set[:-])}
+      genome_set = {:+ => GenomeSet.new(self, protein_set[:+].genomes), :- => GenomeSet.new(self, protein_set[:-].genomes)}
       
       # Locate genes
       puts "Analyzing genome data." unless @o[:q]
@@ -209,7 +209,7 @@ class ROCker
       warn "\nWARNING: Cannot find genomic location of #{missing.size} sequence(s) #{missing.join(',')}.\n\n" unless missing.empty?
       
       # Download genomes
-      genome_set[:all] = GenomeSet.new(self, genome_set[:+].ids + genome_set[:-].ids)
+      genome_set[:all] = GenomeSet.new(self, genome_set[ :+ ].ids + genome_set[ :- ].ids)
       genomes_file = @o[:baseout] + '.src.fasta'
       if @o[:reuse] and File.size? genomes_file
 	 puts "  * reusing existing file: #{genomes_file}." unless @o[:q]
