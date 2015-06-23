@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-22-2015
+# @update Jun-23-2015
 #
 
 require 'json'
@@ -48,13 +48,7 @@ class ROCker
    end
    def ebiFetch(db, ids, format, outfile=nil)
       url = "#{ROCker.ebirest}/dbfetch/dbfetch/#{db.to_s}/#{ids.join(",")}/#{format.to_s}"
-      res = self.restcall url
-      unless outfile.nil?
-	 ohf = File.open(outfile, 'w')
-	 ohf.print res
-	 ohf.close
-      end
-      res
+      self.restcall url, outfile
    end
    def get_coords_from_gff3(genome_ids, pset, thread_id, json_file)
       coords = {}
