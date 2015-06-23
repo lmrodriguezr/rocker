@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-15-2015
+# @update Jun-23-2015
 #
 
 class GenomeSet
@@ -57,9 +57,11 @@ class GenomeSet
       v
    end
    def genome2taxid(genome_id)
-      ln = rocker.ebiFetch('embl', [genome_id], 'annot').split(/[\n\r]/).grep(/^FT\s+\/db_xref="taxon:/).first
+      doc = rocker.ebiFetch('embl', [genome_id], 'annot').split(/[\n\r]/)
+      ln = doc.grep(/^FT\s+\/db_xref="taxon:/).first
+      ln = doc.grep(/^OX\s+NCBI_TaxID=/).first if ln.nil?
       return nil if ln.nil?
-      ln.sub!(/.*"taxon:(\d+)".*/, "\\1")
+      ln.sub!(/.*(?:"taxon:|NCBI_TaxID=)(\d+)["; ].*/, "\\1")
       return nil unless ln =~ /^\d+$/
       ln
    end
