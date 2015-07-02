@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-05-2015
+# @update Jul-02-2015
 #
 
 require 'rocker/blasthit'
@@ -17,7 +17,8 @@ class ROCker
       :searchbins=>'',
       :searchcmd=>{
 	 :blast=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
-	 :diamond=>'%1$sdiamond %2$s -q "%3$s" -d "%4$s" -o "%5$s" -t %6$d -k 1 --min-score 20 --sensitive'},
+	 #:diamond=>'%1$sdiamond %2$s -q "%3$s" -d "%4$s" -o "%5$s" -t %6$d -k 1 --min-score 20 --sensitive'},
+	 :diamond=>'%1$sdiamond %2$s -q "%3$s" -d "%4$s" -a "%5$s.daa" -p %6$d -k 1 --min-score 20 --sensitive && %1$sdiamond view -a "%5$s" -o "%5$s"'},
       :makedbcmd=>{
 	 :blast=>'%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"',
 	 :diamond=>'%1$sdiamond makedb --in "%3$s" -d "%4$s"'}
