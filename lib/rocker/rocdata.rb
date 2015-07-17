@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jan-22-2015
+# @update Jul-17-2015
 #
 
 require 'rocker/rinterface'
@@ -11,11 +11,12 @@ require 'rocker/alignment'
 require 'tmpdir'
 
 class ROCData
-   attr_reader :aln, :windows, :r
+   attr_reader :aln, :windows, :r, :refined
    # Use ROCData.new(table,aln,window) to re-compute from table, use ROCData.new(data) to load
    def initialize(val, aln=nil, window=nil)
       @r = RInterface.new
       @nucl = false
+      @refined = false
       if not aln.nil?
 	 @aln = aln
 	 self.rrun "library('pROC');"
@@ -41,8 +42,10 @@ class ROCData
 	 return false unless self.load_table! table
 	 break if self._refine_iter(table)==0
       end
+      @refined = true
       return true
    end
+   def is_refined? ; @refined ; end
    def _refine_iter table
       to_refine = []
       self.windows.each do |w|
@@ -115,7 +118,7 @@ class ROCData
       f.close
    end
    def to_s
-      o = ''
+      o = "#v ROCker " + ROCker.VERSION + "\n"
       self.windows.each{|w| o += w.to_s}
       o += self.aln.to_s
       return o

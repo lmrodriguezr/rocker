@@ -10,6 +10,7 @@ require 'rocker/rocdata'
 
 class ROCker
    #================================[ Class ]
+   @@VERSION = "1.1.0"
    @@DEFAULTS = {
       # General
       :q=>false, :r=>'R', :nucl=>false, :debug=>false,:thr=>2,:search=>:blast,
@@ -25,6 +26,7 @@ class ROCker
    }
    def self.defaults() @@DEFAULTS ; end
    def self.default(k) @@DEFAULTS[k] ; end
+   def self.VERSION; @@VERSION ; end
 
    #================================[ Instance ]
    attr_reader :o

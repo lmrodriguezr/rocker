@@ -1,6 +1,9 @@
+$:.push File.expand_path(File.dirname(__FILE__) + '/lib')
+require 'rocker'
+
 Gem::Specification.new do |s|
    s.name	= 'bio-rocker'
-   s.version	= '1.0.11'
+   s.version	= ROCker.VERSION
    s.license	= 'artistic 2.0'
    s.summary	= 'ROCker'
    s.description = 'Detecting and quantifying functional genes in short-read metagenomic datasets'

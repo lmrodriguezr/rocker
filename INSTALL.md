@@ -4,9 +4,8 @@ Accurately detecting functional genes in metagenomes.
 
 ## System requirements
 
-1. [Ruby](https://www.ruby-lang.org/), with the [restclient](https://rubygems.org/gems/rest_client),
-   [nokogiri](http://www.nokogiri.org/), and [json](https://rubygems.org/gems/json) packages. To
-   install required packages execute:
+1. [Ruby](https://www.ruby-lang.org/), with the [restclient](https://rubygems.org/gems/rest_client) and
+   [nokogiri](http://www.nokogiri.org/) packages. To install the required packages execute:
    
    ```bash
    $> gem install rest_client
@@ -15,7 +14,7 @@ Accurately detecting functional genes in metagenomes.
    ```
 
 2. [R](http://www.r-project.org/), with the [pROC](http://cran.r-project.org/web/packages/pROC/index.html)
-   package. To install required packages, execute:
+   package. To install the required packages, execute:
 
    ```bash
    $> R
