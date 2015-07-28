@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-22-2015
+# @update Jul-20-2015
 #
 
 require 'rocker/alignment'
@@ -80,7 +80,7 @@ class ProteinSet
 	       nil
 	    end
 	 end
-      end.reduce(:+).compact.uniq
+      end.reduce([], :+).compact.uniq
    end
    def size() self.ids.size end
    def empty?() self.ids.empty? end

@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jul-02-2015
+# @update Jul-28-2015
 #
 
 require 'rocker/blasthit'
@@ -10,7 +10,8 @@ require 'rocker/rocdata'
 
 class ROCker
    #================================[ Class ]
-   @@VERSION = "1.1.0"
+   @@VERSION = "1.1.1"
+   @@CITATION = "Orellana, Rodriguez-R, & Konstantinidis. Under review."
    @@DEFAULTS = {
       # General
       :q=>false, :r=>'R', :nucl=>false, :debug=>false,:thr=>2,:search=>:blast,
@@ -27,6 +28,7 @@ class ROCker
    def self.defaults() @@DEFAULTS ; end
    def self.default(k) @@DEFAULTS[k] ; end
    def self.VERSION; @@VERSION ; end
+   def self.CITATION; @@CITATION ; end
 
    #================================[ Instance ]
    attr_reader :o
