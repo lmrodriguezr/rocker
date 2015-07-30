@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jul-28-2015
+# @update Jul-30-2015
 #
 
 require 'rocker/blasthit'
@@ -10,20 +10,27 @@ require 'rocker/rocdata'
 
 class ROCker
    #================================[ Class ]
-   @@VERSION = "1.1.1"
-   @@CITATION = "Orellana, Rodriguez-R, & Konstantinidis. Under review."
+   @@VERSION = "1.1.2"
+   @@CITATION = "Orellana, Rodriguez-R, & Konstantinidis. Under review. " +
+      "Detecting and quantifying functional genes in short-read metagenomic " +
+      "datasets: method development and application to the nitrogen cycle " +
+      "genes."
    @@DEFAULTS = {
       # General
-      :q=>false, :r=>'R', :nucl=>false, :debug=>false,:thr=>2,:search=>:blast,
+      q: false, r: "R", nucl: false, debug: false, thr: 2, search: :blast,
       # External software
-      :searchbins=>'',
-      :searchcmd=>{
-	 :blast=>'%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" -num_threads %6$d -outfmt 6 -max_target_seqs 1',
-	 #:diamond=>'%1$sdiamond %2$s -q "%3$s" -d "%4$s" -o "%5$s" -t %6$d -k 1 --min-score 20 --sensitive'},
-	 :diamond=>'%1$sdiamond %2$s -q "%3$s" -d "%4$s" -a "%5$s.daa" -p %6$d -k 1 --min-score 20 --sensitive && %1$sdiamond view -a "%5$s" -o "%5$s"'},
-      :makedbcmd=>{
-	 :blast=>'%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"',
-	 :diamond=>'%1$sdiamond makedb --in "%3$s" -d "%4$s"'}
+      searchbins: "",
+      searchcmd: {
+	 blast: '%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" ' +
+	    '-num_threads %6$d -outfmt 6 -max_target_seqs 1',
+	 #diamond: '%1$sdiamond %2$s -q "%3$s" -d "%4$s" -o "%5$s" -t %6$d ' +
+	 #   '-k 1 --min-score 20 --sensitive'},
+	 diamond: '%1$sdiamond %2$s -q "%3$s" -d "%4$s" -a "%5$s.daa" -p %6$d' +
+	    ' -k 1 --min-score 20 --sensitive && %1$sdiamond view -a "%5$s"' +
+	    ' -o "%5$s"'},
+      makedbcmd: {
+	 blast: '%1$smakeblastdb -dbtype %2$s -in "%3$s" -out "%4$s"',
+	 diamond: '%1$sdiamond makedb --in "%3$s" -d "%4$s"'}
    }
    def self.defaults() @@DEFAULTS ; end
    def self.default(k) @@DEFAULTS[k] ; end
@@ -51,7 +58,8 @@ class ROCker
    end
    def bash(cmd, err_msg=nil)
       o = `#{cmd} 2>&1 && echo '{'`
-      raise (err_msg.nil? ? "Error executing: #{cmd}\n\n#{o}" : err_msg) unless o[-2]=='{'
+      raise (err_msg.nil? ? "Error executing: #{cmd}\n\n#{o}" : err_msg) unless
+	 o[-2]=='{'
       true
    end
 end
@@ -68,10 +76,10 @@ require 'rocker/step/plot'
 class Numeric
    def ordinalize
       n= self.to_s
-      s= n[-2]=='1' ? 'th' :
-	 n[-1]=='1' ? 'st' :
-	 n[-1]=='2' ? 'nd' :
-	 n[-1]=='3' ? 'rd' : 'th'
+      s= n[-2]=='1' ? "th" :
+	 n[-1]=='1' ? "st" :
+	 n[-1]=='2' ? "nd" :
+	 n[-1]=='3' ? "rd" : "th"
       n + s
    end
 end
