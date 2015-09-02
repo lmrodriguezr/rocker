@@ -263,13 +263,13 @@ class ROCker
 	       thrs.to_s + " threads." unless @o[:q]
 	    $stderr.puts "   # #{positive_coords}" if @o[:debug]
 	    thr_obj = []
-	    seqs_per_thr = (all_src/thrs).ceil
+	    seqs_per_thr = (all_src.to_f/thrs).ceil
 	    (0 .. (thrs-1)).each do |thr_i|
 	       output = @o[:baseout] + ".mg.fasta.#{thr_i.to_s}"
 	       thr_obj << output
 	       fork do
 		     seqs_a = thr_i*seqs_per_thr + 1
-		     seqs_b = [seqs_a + seqs_per_thr, all_src].min
+		     seqs_b = [seqs_a + seqs_per_thr - 1, all_src].min
 		     # Create sub-fasta
 		     ofh = File.open("#{@o[:baseout]}.src.fasta.#{thr_i.to_s}",
 			"w")
