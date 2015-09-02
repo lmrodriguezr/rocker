@@ -226,7 +226,7 @@ class ROCker
       end # if @o[:reuse] and File.size? coords_file ... else
       unless @o[:pertaxon].nil?
 	 puts "  Using " +
-	    [:+,:-].map{|set| genome_set[set].size }.reduce(:+)}.to_s +
+	    [:+,:-].map{ |set| genome_set[set].size }.reduce(:+).to_s +
 	    " genome(s) after filtering by #{@o[:pertaxon]}." unless @o[:q]
       end
       found = protein_set[:+].in_coords(positive_coords)
