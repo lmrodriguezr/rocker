@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-02-2015
+# @update Sep-03-2015
 #
 
 require 'json'
@@ -306,8 +306,8 @@ class ROCker
 			      reference=[A-Za-z]+\|
 			      (?<genome_id>[A-Za-z0-9_]+)\|.*\s
 			      position=(?<comp>complement\()?(?<from>\d+)\.\.
-				 (?<to>\d+)\)?\s/.match(l)
-			   }x
+			      (?<to>\d+)\)?\s
+			   }x.match(l)
 			   raise "Cannot parse simulated read's defline, are " +
 			      "you using Grinder?: #{l}" if rd.nil?
 			   positive = false
