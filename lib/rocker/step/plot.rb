@@ -51,10 +51,12 @@ class ROCker
       data.rrun "noise <- runif(ncol(x),-.2,.2)"
       data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, " +
 	 "col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".2" : "1"}), " +
-	 "rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"})), length=0);"
+	 "ifelse(x$V5==-1, rgb(1,0,0,#{@o[:transparency] ? ".2" : "1"}), " +
+	 "rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"}))), length=0);"
       data.rrun "points(x$V6, x$V4+noise, " +
 	 "col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".5" : "1"}), " +
-	 "rgb(.5,0,0,#{@o[:transparency] ? ".5" : "1"})), pch=19, cex=1/4);"
+	 "ifelse(x$V5==-1,rgb(1,0,0,#{@o[:transparency] ? ".2" : "1"}),"
+	 "rgb(.5,0,0,#{@o[:transparency] ? ".5" : "1"}))), pch=19, cex=1/4);"
       puts "Plotting windows." unless @o[:q]
       if some_thr
 	 data.rrun "arrows(x0=w$V1, x1=w$V2, y0=w$V5, lwd=2, length=0)"
