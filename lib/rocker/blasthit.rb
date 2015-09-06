@@ -17,6 +17,7 @@ class BlastHit
 	 @sto	= l[2].to_i
 	 @bits	= l[3].to_f
 	 @istrue = l[4]=='1'
+	 @istrue = l[4]=='-1'
 	 @midpoint = l[5].to_i
       else
 	 s = aln.seq(l[1])
