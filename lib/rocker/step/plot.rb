@@ -49,7 +49,7 @@ class ROCker
 	 "ylim=range(x$V4)+c(-0.04,0.04)*diff(range(x$V4)), xlab='', " +
 	 "ylab='Bit score', xaxs='i', xaxt='n');"
       data.rrun "noise <- runif(ncol(x),-.2,.2)"
-      data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, " +
+      data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, lty=1, " +
 	 "col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".2" : "1"}), " +
 	 "ifelse(x$V5==-1, rgb(1,0,0,#{@o[:transparency] ? ".2" : "1"}), " +
 	 "rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"}))), length=0);"
