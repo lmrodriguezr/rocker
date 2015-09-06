@@ -3,7 +3,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jul-30-2015
+# @update Sep-06-2015
 #
 
 lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
@@ -41,7 +41,7 @@ opts = OptionParser.new do |opt|
    when "build"
       unless ROCker.has_build_gems?
 	 opt.separator "+ UNSATISFIED REQUIREMENTS"
-	 opt.separator "    The building task requires uninstalled gems, please "
+	 opt.separator "    The building task requires uninstalled gems, please"
 	 opt.separator "    install them executing:"
 	 opt.separator "       gem install rest_client"
 	 opt.separator ""
@@ -260,13 +260,14 @@ opts = OptionParser.new do |opt|
       opt.on("-t", "--table PATH",
 	 "Formated tabular file to be created (or reused). Required " +
 	 "unless -b is provided."){ |v| o[:table]=v }
-      opt.on("--color", "Color alignment by amino " +
-	 "acid."){ o[:color]=true }
-      opt.on("--no-transparency", "Do not use (semi-)" +
-	 "transparencies."){ |v| o[:transparency] = v }
-      opt.on("--min-score NUMBER", "Minimum Bit-Score to consider a " +
-	 "hit. By default: " + ROCker.default(:minscore).to_s +
-	 "."){ |v| o[:minscore]=v.to_f }
+      opt.on("--color", "Color alignment by amino acid."){ o[:color]=true }
+      opt.on("--tag-negatives",
+	 "Mark hits from negative references."){ o[:tag_negatives] = true }
+      opt.on("--no-transparency",
+	 "Do not use (semi-)transparencies."){ |v| o[:transparency] = v }
+      opt.on("--min-score NUMBER",
+	 "Minimum Bit-Score to consider a hit. By default: " +
+	 ROCker.default(:minscore).to_s + "."){ |v| o[:minscore]=v.to_f }
       opt.on("--stats-impact",
 	 "Plot impact on statistics, instead of absolute values per " +
 	 "window."){ o[:impact]=true }
