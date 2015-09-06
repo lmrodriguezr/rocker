@@ -117,7 +117,7 @@ class ROCker
 	       "col='darkblue', lwd=2, t='o', cex=1/3, pch=19);"
 	 else
 	    data.rrun "lines(pos[!is.na(w$specificity)], " +
-	       "w$specif$icity[!is.na(w$specificity)], col='darkred', " +
+	       "w$specificity[!is.na(w$specificity)], col='darkred', " +
 	       "lwd=2, t='o', cex=1/3, pch=19);"
 	    data.rrun "lines(pos[!is.na(w$sensitivity)], " +
 	       "w$sensitivity[!is.na(w$sensitivity)], col='darkgreen', " +
