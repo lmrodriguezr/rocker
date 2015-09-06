@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-03-2015
+# @update Sep-05-2015
 #
 
 require 'json'
@@ -179,40 +179,51 @@ class ROCker
 	 puts "  * reusing coordinates: #{coords_file}." unless @o[:q]
 	 c = JSON.parse File.read(coords_file), {symbolize_names:true}
 	 positive_coords = c[:positive_coords]
+	 negative_coords = c[:negative_coords]
 	 genome_set[:+].taxa = c[:taxa_pos]
 	 genome_set[:-].taxa = c[:taxa_neg]
       else
-	 thrs = [@o[:thr], genome_set[:+].size].min
-	 puts "  * downloading and parsing #{genome_set[:+].size} GFF3 " +
-	    "document(s) in #{thrs} threads." unless @o[:q]
-	 $stderr.puts "   # Looking for translations: " +
-	    "#{protein_set[:+].tranids}" if @o[:debug]
-	 $stderr.puts "   # Looking into: #{genome_set[:+].ids}" if @o[:debug]
-	 thr_obj = []
-	 (0 .. (thrs-1)).each do |thr_i|
-	    ids_to_parse = []
-	    (0 .. (genome_set[:+].size-1)).each do |i|
-	       ids_to_parse << protein_set[:+].genomes[i] if (i % thrs)==thr_i
+	 all_coords = {}
+	 [:+, :-].each do |set_type|
+	    next if genome_set[set_type].empty?
+	    thrs = [@o[:thr], genome_set[set_type].size].min
+	    puts "  * downloading and parsing #{genome_set[set_type].size} " +
+	       "GFF3 document(s) in #{thrs} threads." unless @o[:q]
+	    $stderr.puts "   # Looking for translations: " +
+	       "#{protein_set[set_type].tranids}" if @o[:debug]
+	    $stderr.puts "   # Looking into: #{genome_set[set_type].ids}" if
+	       @o[:debug]
+	    # Launch threads
+	    thr_obj = []
+	    (0 .. (thrs-1)).each do |thr_i|
+	       ids_to_parse = []
+	       (0 .. (genome_set[set_type].size-1)).each do |i|
+		  ids_to_parse << protein_set[set_type].genomes[i] if
+		     (i % thrs) == thr_i
+	       end
+	       json_file = @o[:baseout] + ".src.coords." + thr_i.to_s + ".tmp"
+	       thr_obj << json_file
+	       fork do
+		  get_coords_from_gff3(ids_to_parse, protein_set[set_type],
+		     thr_i, json_file)
+	       end
 	    end
-	    json_file = @o[:baseout] + ".src.coords." + thr_i.to_s
-	    thr_obj << json_file
-	    fork do
-	       get_coords_from_gff3(ids_to_parse, protein_set[:+], thr_i,
-		  json_file)
+	    # Combine results
+	    Process.waitall
+	    all_coords[set_type] = {}
+	    thr_obj.each do |t|
+	       raise "Thread failed without error trace: #{t}" unless
+		  File.exist? t
+	       o = JSON.parse(File.read(t), {symbolize_names:true})
+	       o[:coords].each_pair do |k,v|
+		  all_coords[set_type][ k ] ||= []
+		  all_coords[set_type][ k ] += v
+	       end
+	       File.unlink t
 	    end
-	 end
-	 # Combine results
-	 Process.waitall
-	 positive_coords = {}
-	 thr_obj.each do |t|
-	    raise "Thread failed without error trace: #{t}" unless File.exist? t
-	    o = JSON.parse File.read(t), {symbolize_names:true}
-	    o[:coords].each_pair do |k,v|
-	       positive_coords[ k ] ||= []
-	       positive_coords[ k ] += v
-	    end
-	    File.unlink t
-	 end
+	 end # [:+, :-].each
+	 positive_coords = all_coords[:+]
+	 negative_coords = all_coords[:-]
 	 # Select one genome per taxon
 	 unless @o[:pertaxon].nil?
 	    puts "  Selecting genomes by #{@o[:pertaxon]}." unless @o[:q]
@@ -220,8 +231,11 @@ class ROCker
 	 end
 	 # Save coordinates and taxa
 	 ofh = File.open(coords_file, "w")
-	 ofh.print JSON.pretty_generate({positive_coords:positive_coords,
-	    taxa_pos:genome_set[:+].taxa, taxa_neg:genome_set[:-].taxa})
+	 ofh.print JSON.pretty_generate({
+	    positive_coords:positive_coords,
+	    negative_coords:negative_coords,
+	    taxa_pos:genome_set[:+].taxa,
+	    taxa_neg:genome_set[:-].taxa})
 	 ofh.close
       end # if @o[:reuse] and File.size? coords_file ... else
       unless @o[:pertaxon].nil?
@@ -268,68 +282,78 @@ class ROCker
 	       output = @o[:baseout] + ".mg.fasta.#{thr_i.to_s}"
 	       thr_obj << output
 	       fork do
-		     seqs_a = thr_i*seqs_per_thr + 1
-		     seqs_b = [seqs_a + seqs_per_thr - 1, all_src].min
-		     # Create sub-fasta
-		     ofh = File.open("#{@o[:baseout]}.src.fasta.#{thr_i.to_s}",
-			"w")
-		     ifh = File.open("#{@o[:baseout]}.src.fasta", "r")
-		     seq_i = 0
-		     while l = ifh.gets
-			seq_i+=1 if l =~ /^>/
-			break if seq_i > seqs_b
-			ofh.print l if seq_i >= seqs_a
-		     end
-		     ifh.close
-		     ofh.close
+		  seqs_a = thr_i*seqs_per_thr + 1
+		  seqs_b = [seqs_a + seqs_per_thr - 1, all_src].min
+		  # Create sub-fasta
+		  ofh = File.open("#{@o[:baseout]}.src.fasta.#{thr_i.to_s}","w")
+		  ifh = File.open("#{@o[:baseout]}.src.fasta","r")
+		  seq_i = 0
+		  while l = ifh.gets
+		     seq_i+=1 if l =~ /^>/
+			     break if seq_i > seqs_b
+		     ofh.print l if seq_i >= seqs_a
+		  end
+		  ifh.close
+		  ofh.close
 
-		     # Run simulator (except if the temporal file is already
-		     # there and can be reused)
-		     bash sprintf(@o[:simulatorcmd], @o[:simulatorbin],
-			"#{@o[:baseout]}.src.fasta.#{thr_i.to_s}",
-			@o[:seqdepth]*@o[:readlen].to_f, @o[:readlen],
-			"#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}") unless
-			   @o[:reuse] and
-			   File.size? @o[:baseout] +
-			   ".mg.tmp.#{thr_i.to_s}-reads.fa"
+		  # Run simulator (except if the temporal file is already
+		  # there and can be reused)
+		  bash sprintf(@o[:simulatorcmd], @o[:simulatorbin],
+		     "#{@o[:baseout]}.src.fasta.#{thr_i.to_s}",
+		     @o[:seqdepth]*@o[:readlen].to_f, @o[:readlen],
+		     "#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}") unless
+			@o[:reuse] and
+			File.size? @o[:baseout] +
+			".mg.tmp.#{thr_i.to_s}-reads.fa"
 
-		     # Tag positives
-		     puts "  * tagging positive reads [thread #{thr_i}]." unless
-			@o[:q]
-		     ifh = File.open(@o[:baseout] + ".mg.tmp.#{thr_i}-reads.fa",
-			"r")
-		     ofh = File.open(@o[:baseout] + ".mg.fasta.#{thr_i}", "w")
-		     while l = ifh.gets
-			if l =~ /^>/
-			   rd = %r{
-			      ^>(?<id>\d+)\s
-			      reference=[A-Za-z]+\|
-			      (?<genome_id>[A-Za-z0-9_]+)\|.*\s
-			      position=(?<comp>complement\()?(?<from>\d+)\.\.
-			      (?<to>\d+)\)?\s
-			   }x.match(l)
-			   raise "Cannot parse simulated read's defline, are " +
-			      "you using Grinder?: #{l}" if rd.nil?
-			   positive = false
-			   positive_coords[rd[:genome_id].to_sym] ||= []
-			   positive_coords[rd[:genome_id].to_sym].each do |gn|
-			      left  = rd[:to].to_i - gn[:from]
-			      right = gn[:to] - rd[:from].to_i
-			      if (left*right >= 0) and
-				    ([left, right].min >= @o[:minovl])
-				 positive = true
-				 break
-			      end
+		  # Tag positive and negative reads
+		  puts "  * tagging reads [thread #{thr_i}]." unless
+		     @o[:q]
+		  ifh = File.open(@o[:baseout] + ".mg.tmp.#{thr_i}-reads.fa",
+		     "r")
+		  ofh = File.open(@o[:baseout] + ".mg.fasta.#{thr_i}", "w")
+		  while l = ifh.gets
+		     if l =~ /^>/
+			rd = %r{
+			   ^>(?<id>\d+)\s
+			   reference=[A-Za-z]+\|
+			   (?<genome_id>[A-Za-z0-9_]+)\|.*\s
+			   position=(?<comp>complement\()?(?<from>\d+)\.\.
+			   (?<to>\d+)\)?\s
+			}x.match(l)
+			raise "Cannot parse simulated read's defline, are " +
+			   "you using Grinder?: #{l}" if rd.nil?
+			positive = false
+			positive_coords[rd[:genome_id].to_sym] ||= []
+			positive_coords[rd[:genome_id].to_sym].each do |gn|
+			   left  = rd[:to].to_i - gn[:from]
+			   right = gn[:to] - rd[:from].to_i
+			   if (left*right >= 0) and
+				 ([left, right].min >= @o[:minovl])
+			      positive = true
+			      break
 			   end
-			   l = ">#{thr_i.to_s}_#{rd[:id]}" +
-			      "#{positive ? "@%" : ""} " +
-			      "ref=#{rd[:genome_id]}:#{rd[:from]}..#{rd[:to]}" +
-			      "#{(rd[:comp]=="complement(") ? "-" : "+"}\n"
 			end
-			ofh.print l
+			negative = false
+			negative_coords[rd[:genome_id].to_sym] ||= []
+			negative_coords[rd[:genome_id].to_sym].each do |gn|
+			   left  = rd[:to].to_i - gn[:from]
+			   right = gn[:to] - rd[:from].to_i
+			   if (left*right >= 0) and
+				 ([left, right].min >= @o[:minovl])
+			      negative = true
+			      break
+			   end
+			end
+			l = ">#{thr_i.to_s}_#{rd[:id]}" +
+			   "#{positive ? "@%" : (negative ? "@$" : "")} " +
+			   "ref=#{rd[:genome_id]}:#{rd[:from]}..#{rd[:to]}" +
+			   "#{(rd[:comp]=="complement(") ? "-" : "+"}\n"
 		     end
-		     ofh.close
-		     ifh.close
+		     ofh.print l
+		  end
+		  ofh.close
+		  ifh.close
 	       end # fork
 	    end # (1 .. thrs).each
 	    Process.waitall
