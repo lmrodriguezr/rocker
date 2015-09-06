@@ -9,7 +9,7 @@ class ROCker
    #================================[ Class ]
    @@DEFAULTS.merge!({
       color:false, gformat:"pdf", width:9, height:9, impact:false,
-      transparency:true, sbj:[]
+      transparency:true, sbj:[], tag_negatives:false
    })
    
    #================================[ Search ]
@@ -27,6 +27,7 @@ class ROCker
       bash "echo '' | #{@o[:r]} --vanilla", "-r/--path-to-r must be " +
 	 "executable. Is R installed?"
 
+      # Source files
       puts "Reading files." unless @o[:q]
       puts "  * loding ROCker file: #{@o[:rocker]}." unless @o[:q]
       data = ROCData.new @o[:rocker]
@@ -37,6 +38,7 @@ class ROCker
 	 blast2table(@o[:blast], @o[:table], data.aln, @o[:minscore])
       end
 
+      # Matches (middle panel)
       puts "Plotting matches." unless @o[:q]
       extra = @o[:gformat]=="pdf" ? "" : ", units='in', res=300"
       @o[:gout] ||= "#{@o[:rocker]}.#{@o[:gformat]}"
@@ -49,14 +51,20 @@ class ROCker
 	 "ylim=range(x$V4)+c(-0.04,0.04)*diff(range(x$V4)), xlab='', " +
 	 "ylab='Bit score', xaxs='i', xaxt='n');"
       data.rrun "noise <- runif(ncol(x),-.2,.2)"
-      data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, lty=1, " +
-	 "col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".2" : "1"}), " +
-	 "ifelse(x$V5==-1, rgb(1,0,0,#{@o[:transparency] ? ".2" : "1"}), " +
-	 "rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"}))), length=0);"
-      data.rrun "points(x$V6, x$V4+noise, " +
-	 "col=ifelse(x$V5==1, rgb(0,0,.5,#{@o[:transparency] ? ".5" : "1"}), " +
-	 "ifelse(x$V5==-1,rgb(1,0,0,#{@o[:transparency] ? ".2" : "1"})," +
-	 "rgb(.5,0,0,#{@o[:transparency] ? ".5" : "1"}))), pch=19, cex=1/4);"
+      data.rrun "hit.col <- ifelse(x$V5==1, " +
+	 "rgb(0,0,.5,#{@o[:transparency] ? ".2" : "1"}), " +
+	 "rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"}))"
+      if @o[:tag_negatives]
+	 data.rrun "hit.col[ x$V5==-1 ] <- " +
+	    "rgb(1,0,0,#{@o[:transparency] ? ".2" : "1"})"
+	 data.rrun "hit.col[ x$V5==0 ] <- " +
+	    "rgb(1/4,0,0,#{@o[:transparency] ? ".2" : "1"})"
+      end
+      data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, lty=1, col=hit.col, " +
+	 "length=0);"
+      data.rrun "points(x$V6, x$V4+noise, col=hit.col, pch=19, cex=1/4);"
+      
+      # Windows (middle panel)
       puts "Plotting windows." unless @o[:q]
       if some_thr
 	 data.rrun "arrows(x0=w$V1, x1=w$V2, y0=w$V5, lwd=2, length=0)"
@@ -64,10 +72,13 @@ class ROCker
 	    "y0=w$V5[-nrow(w)], y1=w$V5[-1], lwd=2, length=0)"
       end
       data.rrun "legend('bottomright', legend=c('Match span'," +
-	 "'Match mid-point','Reference','Non-reference'), lwd=c(1,NA,1,1), " +
-	 "pch=c(NA,19,19,19), col=c('black','black','darkblue','darkred'), " +
-	 "ncol=4,bty='n')"
+	 "'Match mid-point','Reference (+)'," +
+	 "#{"'Reference (-)'," if @o[:tag_negatives]}'Non-reference'), " +
+	 "lwd=c(1,NA,1,1,1), pch=c(NA,19,19,19,19), ncol=5, bty='n', " +
+	 "col=c('black','black','darkblue'," +
+	 "#{@o[:tag_negatives] ? "rgb(1,0,0),rgb(.2,0,0)" : "'darkred'"}))"
 
+      # Alignment (top panel)
       puts "Plotting alignment." unless @o[:q]
       data.rrun "par(mar=c(0,4,0.5,0.5)+0.1);"
       data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}), " +
@@ -88,6 +99,7 @@ class ROCker
 	 i += 1
       end
 
+      # Statistics (bottom panel)
       puts "Plotting statistics." unless @o[:q]
       data.rrun "par(mar=c(5,4,0,0.5)+.1);"
       data.rrun "plot(1, t='n', xlim=c(0,#{data.aln.cols}), " +
