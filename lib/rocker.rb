@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-06-2015
+# @update Sep-07-2015
 #
 
 require 'rocker/blasthit'
@@ -10,7 +10,7 @@ require 'rocker/rocdata'
 
 class ROCker
    #================================[ Class ]
-   @@VERSION = "1.1.5"
+   @@VERSION = "1.1.6"
    @@CITATION = "Orellana, Rodriguez-R, & Konstantinidis. Under review. " +
       "Detecting and quantifying functional genes in short-read metagenomic " +
       "datasets: method development and application to the nitrogen cycle " +
@@ -23,8 +23,6 @@ class ROCker
       searchcmd: {
 	 blast: '%1$s%2$s -query "%3$s" -db "%4$s" -out "%5$s" ' +
 	    '-num_threads %6$d -outfmt 6 -max_target_seqs 1',
-	 #diamond: '%1$sdiamond %2$s -q "%3$s" -d "%4$s" -o "%5$s" -t %6$d ' +
-	 #   '-k 1 --min-score 20 --sensitive'},
 	 diamond: '%1$sdiamond %2$s -q "%3$s" -d "%4$s" -a "%5$s.daa" -p %6$d' +
 	    ' -k 1 --min-score 20 --sensitive && %1$sdiamond view -a "%5$s"' +
 	    ' -o "%5$s"'},
@@ -59,7 +57,7 @@ class ROCker
    def bash(cmd, err_msg=nil)
       o = `#{cmd} 2>&1 && echo '{'`
       raise (err_msg.nil? ? "Error executing: #{cmd}\n\n#{o}" : err_msg) unless
-	 o[-2]=='{'
+	 o[-2]=="{"
       true
    end
 end
