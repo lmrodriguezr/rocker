@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jul-17-2015
+# @update Sep-07-2015
 #
 
 require 'rocker/rinterface'
@@ -12,7 +12,8 @@ require 'tmpdir'
 
 class ROCData
    attr_reader :aln, :windows, :r, :refined
-   # Use ROCData.new(table,aln,window) to re-compute from table, use ROCData.new(data) to load
+   # Use ROCData.new(table,aln,window) to re-compute from table, use
+   # ROCData.new(data) to load
    def initialize(val, aln=nil, window=nil)
       @r = RInterface.new
       @nucl = false
@@ -34,7 +35,9 @@ class ROCData
 	 @aln.read_rocker(val)
       end
    end
-   def win_at_col(col) self.windows.select{|w| (w.from<=col) and (w.to>=col)}.first end
+   def win_at_col(col)
+      self.windows.select{|w| (w.from<=col) and (w.to>=col)}.first
+   end
    def in_nucl?() @nucl end
    def nucl=(nucl) @nucl=nucl end
    def refine! table
@@ -51,7 +54,8 @@ class ROCData
       self.windows.each do |w|
 	 next if w.almost_empty or w.length <= 5
 	 self.rrun "acc <- w$accuracy[w$V1==#{w.from}];"
-	 to_refine << w if self.rrun("ifelse(is.na(acc), 100, acc)", :float) < 95.0
+	 to_refine << w if
+	    self.rrun("ifelse(is.na(acc), 100, acc)", :float) < 95.0
       end
       n = to_refine.size
       return 0 unless n > 0
@@ -89,9 +93,17 @@ class ROCData
 	    win <- which( (m>=w$V1) & (m<=w$V2))[1];
 	    if(!is.na(win)){
 	       if(x$V4[i] >= w$V5[win]){
-		  if(x$V5[i]==1){ w$tp[win] <- w$tp[win]+1 }else{ w$fp[win] <- w$fp[win]+1 };
+		  if(x$V5[i]==1){
+		     w$tp[win] <- w$tp[win]+1
+		  } else {
+		     w$fp[win] <- w$fp[win]+1
+		  }
 	       }else{
-		  if(x$V5[i]==1){ w$fn[win] <- w$fn[win]+1 }else{ w$tn[win] <- w$tn[win]+1 };
+		  if(x$V5[i]==1){
+		     w$fn[win] <- w$fn[win]+1
+		  } else {
+		     w$tn[win] <- w$tn[win]+1
+		  };
 	       }
 	    }
 	 }
@@ -109,7 +121,9 @@ class ROCData
    end
    def init_windows!(size)
       @windows = []
-      1.step(self.aln.cols,size).each { |a| @windows << ROCWindow.new(self, a, a+size-1) }
+      1.step(self.aln.cols,size).each do |a|
+	 @windows << ROCWindow.new(self, a, a+size-1)
+      end
    end
    def rrun(cmd, type=nil) self.r.run cmd, type end
    def save(file)
