@@ -32,8 +32,8 @@ class ROCWindow
       unless almost_empty
 	 rrun "rocobj <- roc(as.numeric(y$V5==1), y$V4);"
 	 thr = rrun("coords(rocobj, 'best', ret='threshold', " +
-	    "best.method='youden', best.weights=c(0.5, sum(y$V5)/nrow(y)))[1];",
-	    :float)
+	    "best.method='youden', " +
+	    "best.weights=c(0.5, sum(y$V5==1)/nrow(y)))[1];", :float)
 	 @thr = thr.to_f
 	 @thr = nil if @thr==0.0 or @thr.infinite?
       end
