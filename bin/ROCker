@@ -191,7 +191,7 @@ opts = OptionParser.new do |opt|
       opt.separator "   o The input BLAST (-b) MUST be in tabular format. " +
 	 "True positives must"
       opt.separator "     contain the string '@%' somewhere in the query ID."
-      opt.separator "   o The table file (-t) should be tab-delimited and " +
+      opt.separator "   o The table file (-T) should be tab-delimited and " +
 	 "contain six columns:"
       opt.separator "      1. Subject ID."
       opt.separator "      2. Start of alignment in subject (translated to " +
@@ -268,14 +268,14 @@ opts = OptionParser.new do |opt|
 	 "Required."){ |v| o[:rocker]=v }
       opt.on("-b", "--ref-blast PATH",
 	 "Tabular BLAST (blastx) of the test reads vs. the reference " +
-	 "dataset. Required unless -t exists."){ |v| o[:blast]=v }
+	 "dataset. Required unless -T exists."){ |v| o[:blast]=v }
       opt.on("-o", "--plot-file PATH",
 	 "File to be created with the plot. By default: value of -k + " +
 	 "'.' + value of -f."){ |v| o[:gout]=v }
       
       opt.separator ""
       opt.separator "+ ADVANCED PLOTTING ARGUMENTS"
-      opt.on("-t", "--table PATH",
+      opt.on("-T", "--table PATH",
 	 "Formated tabular file to be created (or reused). Required " +
 	 "unless -b is provided."){ |v| o[:table]=v }
       opt.on("--color", "Color alignment by amino acid."){ o[:color]=true }
