@@ -26,12 +26,14 @@ class ROCWindow
       end
    end
    def compute!
-      self.load_hits
-      @hits = self.rrun "nrow(y);", :int
-      @tps = self.rrun "sum(y$V5);", :int
-      unless self.almost_empty
-	 self.rrun "rocobj <- roc(y$V5, y$V4);"
-	 thr = self.rrun 'coords(rocobj, "best", ret="threshold", best.method="youden", best.weights=c(0.5, sum(y$V5)/nrow(y)))[1];', :float
+      load_hits
+      @hits = rrun("nrow(y);", :int)
+      @tps = rrun("sum(y$V5==1);", :int)
+      unless almost_empty
+	 rrun "rocobj <- roc(as.numeric(y$V5==1), y$V4);"
+	 thr = rrun("coords(rocobj, 'best', ret='threshold', " +
+	    "best.method='youden', best.weights=c(0.5, sum(y$V5)/nrow(y)))[1];",
+	    :float)
 	 @thr = thr.to_f
 	 @thr = nil if @thr==0.0 or @thr.infinite?
       end
