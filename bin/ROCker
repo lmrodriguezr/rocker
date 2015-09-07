@@ -3,7 +3,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-06-2015
+# @update Sep-07-2015
 #
 
 lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
@@ -48,68 +48,71 @@ opts = OptionParser.new do |opt|
       end
       opt.separator "+ BUILDING ARGUMENTS"
       opt.on("-p", "--positive ID1,ID2,ID3", Array,
-	 "Comma-separated list of UniProtKB IDs corresponding to the 'positive' ",
-	 "training set. Required unless -P or -a are used."){ |v| o[:positive]=v }
+	 "Comma-separated list of UniProtKB IDs corresponding to the positive ",
+	 "training set. Required unless -P or -a are used."
+	 ){ |v| o[:positive]=v }
       opt.on("-n", "--negative ID1,ID2,ID3", Array,
-	 "Comma-separated list of UniProtKB IDs corresponding to the 'negative' ",
+	 "Comma-separated list of UniProtKB IDs corresponding to the negative ",
 	 "training set. See also -N."){ |v| o[:negative]=v }
       opt.on("-o", "--baseout PATH",
-	 "Prefix for the output files to be generated. Required."){ |v| o[:baseout]=v }
+	 "Prefix for the output files to be generated. Required."
+	 ){ |v| o[:baseout]=v }
       
       opt.separator ""
       opt.separator "+ ADVANCED BUILDING ARGUMENTS"
       opt.on("-P", "--positive-file PATH",
-	 "File containing the positive set (see -p), one UniProtKB ID per line.",
+	 "File containing the positive set, one UniProtKB ID per line.",
 	 "If used, -p is not required."){ |v| o[:posfile]=v }
       opt.on("-N", "--negative-file PATH",
-	 "File containing the negative set (see -n), one UniProtKB ID per line."
+	 "File containing the negative set, one UniProtKB ID per line."
 	 ){ |v| o[:negfile]=v }
       opt.on("-a", "--alignment PATH",
-	 "Protein alignment of the reference sequences. The defline must contain",
+	 "Protein alignment of the reference sequences. The defline must have",
 	 "UniProtKB IDs. If used, -p is not required."){ |v| o[:aln]=v }
       opt.on("-s", "--seqdepth NUMBER",
-	 "Sequencing depth (reads/bp) to be used in building the in silico metagenome",
-	 "By default: '" + ROCker.default(:seqdepth).to_s +
+	 "Sequencing depth (reads/bp) to be used in building the in silico" +
+	 "metagenome.", "By default: '" + ROCker.default(:seqdepth).to_s +
 	 "'."){ |v| o[:seqdepth]=v.to_f }
       opt.on("-l", "--readlen INTEGER",
-	 "Average read length of in silico metagenome (in bp).", "By default: '" +
-	 ROCker.default(:readlen).to_s + "'."){ |v| o[:readlen]=v.to_i }
+	 "Average read length of in silico metagenome (in bp).",
+	 "By default: '" + ROCker.default(:readlen).to_s + "'."
+	 ){ |v| o[:readlen]=v.to_i }
       opt.on("-v", "--overlap INTEGER",
-	 "Minimum overlap (in bp) with reference gene to tag a read as positive.",
+	 "Minimum overlap (in bp) with reference gene to tag a positive read.",
 	 "By default: '" + ROCker.default(:minovl).to_s +
 	 "'."){ |v| o[:minovl]=v.to_i }
       opt.on("--per-taxon RANK",
-	 "If selected, only one genome per taxon is used to build the metagenome.",
+	 "Use only one genome per taxon to build the metagenome.",
 	 "Valid ranks include: species, genus, family, order, class, phylum."
 	 ){ |v| o[:pertaxon]=v.downcase }
       opt.on("--nosimulate",
 	 "Do not simulate metagenome. It implies --nosearch.",
 	 "By default, metagenome is simulated."){ |v| o[:nosimulate]=v }
       opt.on("--nosearch",
-	 "Do not execute similarity search. By default, it is executed."
+	 "Do not execute similarity search. By default it's executed."
 	 ){ |v| o[:nosearch]=v }
       opt.on("--noalignment",
-	 "Do not align reference set. By default, references are aligned."
+	 "Do not align reference set. By default references are aligned."
 	 ){ |v| o[:noaln]=v }
       opt.on("--nocleanup",
-	 "Keep all intermediate files. By default, intermediate files are removed."
+	 "Keep all intermediate files. By default temporal files are removed."
 	 ){ |v| o[:noclean]=v }
       opt.on("--reuse-files",
-	 "Re-use existing result files. By default, existing files are ignored."
+	 "Re-use existing result files. By default existing files are ignored."
 	 ){ |v| o[:reuse]=true }
       
       opt.separator ""
       opt.separator "+ EXTERNAL SOFTWARE OPTIONS"
       opt.on("--search STR",
-	 "Similarity search algorithm to use. Supported: 'blast' and 'diamond'",
+	 "Similarity search algorithm to use. Supported: blast and diamond",
 	 "By default: '" + ROCker.default(:search).to_s + "'."
 	 ){ |v| o[:search]=v.to_sym }
       opt.on("--simulator STR",
-	 "In silico metagenome simulator to use. Supported: 'grinder'.",
+	 "In silico metagenome simulator to use. Supported: grinder.",
 	 "By default: '" + ROCker.default(:simulator).to_s + "'."
 	 ){ |v| o[:simulator]=v.to_sym }
       opt.on("--aligner STR",
-	 "Multiple alignment algorithm to use. Supported: 'clustalo' and 'muscle'.",
+	 "Multiple alignment algorithm to use. Supported: clustalo and muscle.",
 	 "By default: '" + ROCker.default(:aligner).to_s + "'."
 	 ){ |v| o[:aligner]=v.to_sym }
       opt.on("--search-bins PATH",
@@ -125,28 +128,32 @@ opts = OptionParser.new do |opt|
 	 ROCker.default(:alignerbin).values.join("' or '") + "'."
 	 ){ |v| o[:alignerbin]=v }
       opt.on("--search-cmd STR",
-	 "Command calling similarity search, where %1$s: binaries, %2$s: program,",
+	 "Command for similarity search, where %1$s: binaries, %2$s: program,",
 	 "%3$s: input, %4$s: database, %5$s: output, %6$d: threads.",
 	 *ROCker.default(:searchcmd).keys.map do |k|
-	    ["By default if --search #{k}:", "'" + ROCker.default(:searchcmd)[k] + "'"]
+	    ["By default if --search #{k}:", "'" +
+	       ROCker.default(:searchcmd)[k] + "'"]
 	 end.reduce([],:+) ){ |v| o[:searchcmd]=v }
       opt.on("--makedb-cmd STR",
 	 "Command calling database formater for similarity search, where",
 	 "%1$s: binaries, %2$s: dbtype, %3$s: input, %4$s: database.",
 	 *ROCker.default(:makedbcmd).keys.map do |k|
-	    ["By default if --search #{k}:", "'" + ROCker.default(:makedbcmd)[k] + "'"]
+	    ["By default if --search #{k}:", "'" +
+	       ROCker.default(:makedbcmd)[k] + "'"]
 	 end.reduce([],:+) ){ |v| o[:makedbcmd]=v }
       opt.on("--simulator-cmd STR",
 	 "Command calling simulator, where %1$s: binary, %2$s: input,",
 	 "%3$s: seq. depth (X), %4$d: read len., %5$s: output.",
 	 *ROCker.default(:simulatorcmd).keys.map do |k|
-	    ["By default if --simulator #{k}:", "'" + ROCker.default(:simulatorcmd)[k] + "'"]
+	    ["By default if --simulator #{k}:", "'" +
+	       ROCker.default(:simulatorcmd)[k] + "'"]
 	 end.reduce([],:+) ){ |v| o[:simulatorcmd]=v }
       opt.on("--aligner-cmd STR",
 	 "Command calling aligner, where %1$s: binary, %2$s: input,",
 	 "%3$s: output, %4$d: threads.",
 	 *ROCker.default(:alignercmd).keys.map do |k|
-	    ["By default if --aligner #{k}:", "'" + ROCker.default(:alignercmd)[k] + "'."]
+	    ["By default if --aligner #{k}:", "'" +
+	       ROCker.default(:alignercmd)[k] + "'."]
 	 end.reduce([],:+) ){ |v| o[:alignercmd]=v }
    when "compile"
       opt.separator "+ COMPILATION ARGUMENTS"
@@ -155,13 +162,13 @@ opts = OptionParser.new do |opt|
 	 ){ |v| o[:aln]=v }
       opt.on("-b", "--ref-blast PATH",
 	 "Tabular BLAST (blastx) of the test reads vs. the reference dataset.",
-	 "Required unless -t exists."){ |v| o[:blast]=v }
+	 "Required unless -T exists."){ |v| o[:blast]=v }
       opt.on("-k", "--rocker PATH",
 	 "ROCker file to be created. Required."){ |v| o[:rocker]=v }
       
       opt.separator ""
       opt.separator "+ ADVANCED COMPILATION ARGUMENTS"
-      opt.on("-t", "--table PATH",
+      opt.on("-T", "--table PATH",
 	 "Formated tabular file to be created (or reused).",
 	 "Required unless -b is provided."){ |v| o[:table]=v }
       opt.on("--min-score NUMBER",
@@ -178,24 +185,33 @@ opts = OptionParser.new do |opt|
 	 "ignored."){ |v| o[:reuse]=true }
       opt.separator ""
       opt.separator "+ INPUT/OUTPUT"
-      opt.separator "   o The input alignment (-a) MUST be in FastA format, and the IDs must"
+      opt.separator "   o The input alignment (-a) MUST be in FastA format, " +
+	 "and the IDs must"
       opt.separator "     coincide with those from the BLAST (-b)."
-      opt.separator "   o The input BLAST (-b) MUST be in tabular format. True positives must"
+      opt.separator "   o The input BLAST (-b) MUST be in tabular format. " +
+	 "True positives must"
       opt.separator "     contain the string '@%' somewhere in the query ID."
-      opt.separator "   o The table file (-t) should be tab-delimited and contain six columns:"
+      opt.separator "   o The table file (-t) should be tab-delimited and " +
+	 "contain six columns:"
       opt.separator "      1. Subject ID."
-      opt.separator "      2. Start of alignment in subject (translated to alignment column)."
-      opt.separator "      3. End of alignment in subject (translated to alignment column)."
+      opt.separator "      2. Start of alignment in subject (translated to " +
+	 "alignment column)."
+      opt.separator "      3. End of alignment in subject (translated to " +
+	 "alignment column)."
       opt.separator "      4. Bit score."
-      opt.separator "      5. A number indicating if it was a true (1) or a false (0) positive."
-      opt.separator "      6. Mid-point of the alignment in the reference sequence."
-      opt.separator "   o The ROCker file (-k) is a tab-delimited file containing five columns:"
+      opt.separator "      5. A number indicating if it was a true (1) or a " +
+	 "false (0) positive."
+      opt.separator "      6. Mid-point of the alignment in the reference " +
+	 "sequence."
+      opt.separator "   o The ROCker file (-k) is a tab-delimited file " +
+	 "containing five columns:"
       opt.separator "      1. First column of the window in the alignment."
       opt.separator "      2. Last column of the window in the alignment."
       opt.separator "      3. Number of positives in the window (hits)."
       opt.separator "      4. Number of true positives in the window."
       opt.separator "      5. Bit score threshold set for the window."
-      opt.separator "     The file also contains the alignment (commented with #:)."
+      opt.separator "     The file also contains the alignment (commented " +
+	 "with #:)."
       opt.separator ""
    when "search"
       opt.separator "+ SEARCHING ARGUMENTS"
@@ -225,13 +241,15 @@ opts = OptionParser.new do |opt|
 	 "Command calling similarity search, where %1$s: binaries, %2$s: " +
 	 "program, %3$s: input, %4$s: database, %5$s: output, %6$d: threads.",
 	 *ROCker.default(:searchcmd).keys.map do |k|
-	    "By default if --search #{k}: '" + ROCker.default(:searchcmd)[k] + "'."
+	    "By default if --search #{k}: '" + ROCker.default(:searchcmd)[k] +
+	       "'."
 	 end ){ |v| o[:searchcmd]=v }
       opt.on("--makedb-cmd STR",
 	 "Command calling database format for similarity search, where %1$s: " +
 	 "binaries, %2$s: dbtype, %3$s: input, %4$s: database.",
 	 *ROCker.default(:makedbcmd).keys.map do |k|
-	    "By default if --search #{k}: '" + ROCker.default(:makedbcmd)[k] + "'."
+	    "By default if --search #{k}: '" + ROCker.default(:makedbcmd)[k] +
+	       "'."
 	 end ){ |v| o[:makedbcmd]=v }
    when "filter"
       opt.separator "+ FILTERING ARGUMENTS"
@@ -301,10 +319,11 @@ opts = OptionParser.new do |opt|
       "Number of threads to use. By default: " + ROCker.default(:thr).to_s +
       "."){ |v| o[:thr]=v.to_i }
    opt.on("-R", "--path-to-r PATH",
-      "Path to the R executable to be used. By default: '" + ROCker.default(:r) +
-      "'."){ |v| o[:r]=v }
+      "Path to the R executable to be used. By default: '" +
+      ROCker.default(:r) + "'."){ |v| o[:r]=v }
    opt.on("-q", "--quiet", "Run quietly."){ |v| o[:q]=true }
-   opt.on("-d", "--debug", "Display debugging information."){ |v| o[:debug]=true }
+   opt.on("-d", "--debug",
+      "Display debugging information."){ |v| o[:debug]=true }
    opt.on("-h", "--help", "Display this screen") do
       puts opt
       exit
