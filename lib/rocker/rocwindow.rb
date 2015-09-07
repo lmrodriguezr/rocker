@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jan-22-2015
+# @update Sep-07-2015
 #
 
 class ROCWindow
@@ -22,7 +22,7 @@ class ROCWindow
 	 @from = [a,b].min
 	 @to = [a,b].max
 	 @thr = nil
-	 self.compute!
+	 compute!
       end
    end
    def compute!
@@ -48,16 +48,16 @@ class ROCWindow
       return nil if a.nil? and b.nil?
       return a.thr if b.nil?
       return b.thr if a.nil?
-      return (b.thr*(self.from-a.from) - a.thr*(self.from-b.from))/(b.from-a.from)
+      return (b.thr*(from-a.from) - a.thr*(from-b.from))/(b.from-a.from)
    end
-   def load_hits() self.rrun "y <- x[x$V6>=#{self.from} & x$V6<=#{self.to},];" end
-   def previous() (self.from == 1) ? nil : self.data.win_at_col(self.from - 1) end
-   def next() (self.to == self.data.aln.cols) ? nil : self.data.win_at_col(self.to + 1) end
-   def thr_notnil() (@thr.nil? or @thr.infinite?) ? self.around_thr : @thr end
-   def fps() self.hits - self.tps end
-   def almost_empty() self.fps < 3 or self.tps < 3 end
-   def length() self.to - self.from + 1 end
-   def rrun(cmd, type=nil) self.data.rrun cmd, type end
-   def to_s() [self.from, self.to, self.hits, self.tps, self.thr_notnil].join("\t") + "\n" end
+   def load_hits() self.rrun "y <- x[x$V6>=#{from} & x$V6<=#{to},];" end
+   def previous() (from == 1) ? nil : data.win_at_col(from - 1) end
+   def next() (to == data.aln.cols) ? nil : data.win_at_col(to + 1) end
+   def thr_notnil() (@thr.nil? or @thr.infinite?) ? around_thr : @thr end
+   def fps() hits - tps end
+   def almost_empty() fps < 3 or tps < 3 end
+   def length() to - from + 1 end
+   def rrun(cmd, type=nil) data.rrun(cmd, type) end
+   def to_s() [from, to, hits, tps, thr_notnil].join("\t") + "\n" end
 end
 
