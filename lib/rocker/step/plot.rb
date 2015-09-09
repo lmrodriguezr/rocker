@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-06-2015
+# @update Sep-09-2015
 #
 
 class ROCker
@@ -54,12 +54,9 @@ class ROCker
       data.rrun "hit.col <- ifelse(x$V5==1, " +
 	 "rgb(0,0,.5,#{@o[:transparency] ? ".2" : "1"}), " +
 	 "rgb(.5,0,0,#{@o[:transparency] ? ".2" : "1"}))"
-      if @o[:tag_negatives]
-	 data.rrun "hit.col[ x$V5==-1 ] <- " +
-	    "rgb(1,0,0,#{@o[:transparency] ? ".2" : "1"})"
-	 data.rrun "hit.col[ x$V5==0 ] <- " +
-	    "rgb(1/4,0,0,#{@o[:transparency] ? ".2" : "1"})"
-      end
+      data.rrun "hit.col[ x$V5==-1 ] <- " +
+	 "rgb(0.722,0.722,0,#{@o[:transparency] ? ".2" : "1"})" if
+	 @o[:tag_negatives]
       data.rrun "arrows(x0=x$V2, x1=x$V3, y0=x$V4+noise, lty=1, col=hit.col, " +
 	 "length=0);"
       data.rrun "points(x$V6, x$V4+noise, col=hit.col, pch=19, cex=1/4);"
@@ -76,7 +73,7 @@ class ROCker
 	 "#{"'Reference (-)'," if @o[:tag_negatives]}'Non-reference'), " +
 	 "lwd=c(1,NA,1,1,1), pch=c(NA,19,19,19,19), ncol=5, bty='n', " +
 	 "col=c('black','black','darkblue'," +
-	 "#{@o[:tag_negatives] ? "rgb(1,0,0),rgb(.2,0,0)" : "'darkred'"}))"
+	 "#{"rgb(.722,.722,0)," if @o[:tag_negatives]}'darkred'))"
 
       # Alignment (top panel)
       puts "Plotting alignment." unless @o[:q]
