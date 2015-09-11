@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-05-2015
+# @update Sep-11-2015
 #
 
 require 'json'
@@ -185,6 +185,7 @@ class ROCker
       else
 	 all_coords = {}
 	 [:+, :-].each do |set_type|
+	    all_coords[set_type] = {}
 	    next if genome_set[set_type].empty?
 	    thrs = [@o[:thr], genome_set[set_type].size].min
 	    puts "  * downloading and parsing #{genome_set[set_type].size} " +
@@ -210,7 +211,6 @@ class ROCker
 	    end
 	    # Combine results
 	    Process.waitall
-	    all_coords[set_type] = {}
 	    thr_obj.each do |t|
 	       raise "Thread failed without error trace: #{t}" unless
 		  File.exist? t
