@@ -10,7 +10,7 @@ require 'rocker/rocdata'
 
 class ROCker
    #================================[ Class ]
-   @@VERSION = "1.1.7"
+   @@VERSION = "1.1.8"
    @@CITATION = "Orellana, Rodriguez-R, & Konstantinidis. Under review. " +
       "Detecting and quantifying functional genes in short-read metagenomic " +
       "datasets: method development and application to the nitrogen cycle " +

@@ -273,11 +273,12 @@ class ROCker
 	    all_src = File.readlines("#{@o[:baseout]}.src.fasta"
 	       ).select{ |l| l =~ /^>/ }.size
 	    thrs = [@o[:thr], all_src].min
+	    thr_obj = []
+	    seqs_per_thr = (all_src.to_f/thrs).ceil
+	    thrs = (all_src.to_f/seqs_per_thr).ceil
 	    puts "  * simulating metagenomes and tagging positive reads in " +
 	       thrs.to_s + " threads." unless @o[:q]
 	    $stderr.puts "   # #{positive_coords}" if @o[:debug]
-	    thr_obj = []
-	    seqs_per_thr = (all_src.to_f/thrs).ceil
 	    (0 .. (thrs-1)).each do |thr_i|
 	       output = @o[:baseout] + ".mg.fasta.#{thr_i.to_s}"
 	       thr_obj << output
