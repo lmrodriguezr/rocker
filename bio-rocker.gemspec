@@ -15,8 +15,8 @@ Gem::Specification.new do |s|
    s.homepage	= 'http://enve-omics.ce.gatech.edu/rocker'
    s.executables << 'ROCker'
    s.date	= '2015-07-02'
-   s.add_runtime_dependency 'rest-client', '~> 1.7.3'
-   s.add_runtime_dependency 'json', '~> 1.8.1'
-   s.required_ruby_version = '~> 2.0'
+   s.add_runtime_dependency 'rest-client', '>= 1.7.3'
+   s.add_runtime_dependency 'json', '>= 1.8.1'
+   s.required_ruby_version = '>= 2.0'
 end
 
