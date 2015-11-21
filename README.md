@@ -1,5 +1,7 @@
 # ROCker
 
+[![Gem Version](https://badge.fury.io/rb/bio-rocker.svg)](https://badge.fury.io/rb/bio-rocker)
+
 Accurately detecting functional genes in metagenomes.
 
 For installation instructions, see [INSTALL.md](./INSTALL.md). For license information, see
