@@ -2,10 +2,10 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jul-20-2015
+# @update Dec-01-2015
 #
 
-require 'rocker/alignment'
+require "rocker/alignment"
 
 class ProteinSet
    attr_reader :rocker, :ids, :aln
@@ -43,7 +43,7 @@ class ProteinSet
       self.ids.each do |id|
 	 doc = self.rocker.ebiFetch(:uniprotkb, [id], :annot).split("\n")
 	 doc.grep( /^DR\s+EMBL;/ ).map do |ln|
-	    r=ln.split('; ')
+	    r=ln.split("; ")
 	    self.link_genome(id, r[1])
 	    self.link_tranid(id, r[2])
 	 end
@@ -67,16 +67,20 @@ class ProteinSet
       return [] if @tranids.empty?
       @tranids.values.reduce(:+).uniq
    end
+   def tranids_dump
+      @tranids.map{|k,v| "{#{k}: #{v}}"}.join(", ")
+   end
    def in_coords(coords)
       coords.keys.map do |genome|
 	 locations = coords[ genome ]
 	 locations.map do |loc|
-	    if not loc[:prot_id].nil?
-	       loc[:prot_id] if self.include? loc[:prot_id]
-	    elsif not loc[:tran_id].nil? and not @tranids.rassoc(loc[:tran_id]).nil?
-	       @tranids.rassoc(loc[:tran_id]).first
+	    if not loc[:prot_id].nil? 
+	       loc[:prot_id] if include? loc[:prot_id]
+	    elsif not loc[:tran_id].nil?
+	       @tranids.map{ |k,v| v.include?(loc[:tran_id]) ? k : nil }.compact.first
 	    else
-	       warn "Warning: Impossible to resolve protein located in '#{genome}' at: #{loc}."
+	       warn "Warning: Impossible to resolve protein located " +
+		  "in '#{genome}' at: #{loc}."
 	       nil
 	    end
 	 end

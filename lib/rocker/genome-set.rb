@@ -2,7 +2,7 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Jun-23-2015
+# @update Dec-01-2015
 #
 
 class GenomeSet
@@ -46,10 +46,10 @@ class GenomeSet
    def empty?() self.ids.empty? end
 
    #================================[ Utilities ]
-   def genome2taxon(genome_id, rank='species')
+   def genome2taxon(genome_id, rank="species")
       v = genome2taxid(genome_id)
       unless v.nil?
-	 xml = rocker.ebiFetch('taxonomy', [v], 'enataxonomyxml').gsub(/\s*\n\s*/,'')
+	 xml = rocker.ebiFetch(:taxonomy, [v], :enataxonomyxml).gsub(/\s*\n\s*/,"")
 	 v = xml.scan(/<taxon [^>]+>/).grep(/rank="#{rank}"/).first
 	 v.sub!(/.* taxId="(\d+)".*/,"\\1") unless v.nil?
       end
@@ -57,7 +57,7 @@ class GenomeSet
       v
    end
    def genome2taxid(genome_id)
-      doc = rocker.ebiFetch('embl', [genome_id], 'annot').split(/[\n\r]/)
+      doc = rocker.ebiFetch(:embl, [genome_id], :annot).split(/[\n\r]/)
       ln = doc.grep(/^FT\s+\/db_xref="taxon:/).first
       ln = doc.grep(/^OX\s+NCBI_TaxID=/).first if ln.nil?
       return nil if ln.nil?

@@ -3,13 +3,13 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-07-2015
+# @update Nov-25-2015
 #
 
-lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
+lib = File.expand_path("../lib", File.dirname(__FILE__))
 $:.push lib if Dir.exist? lib
-require 'rocker'
-require 'optparse'
+require "rocker"
+require "optparse"
 
 
 #================================[ Options parsing ]

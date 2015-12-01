@@ -2,12 +2,12 @@
 # @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-11-2015
+# @update Dec-01-2015
 #
 
-require 'json'
-require 'rocker/protein-set'
-require 'rocker/genome-set'
+require "json"
+require "rocker/protein-set"
+require "rocker/genome-set"
 
 class ROCker
    #================================[ Class ]
@@ -30,8 +30,8 @@ class ROCker
       return @@HAS_BUILD_GEMS unless @@HAS_BUILD_GEMS.nil?
       @@HAS_BUILD_GEMS = TRUE
       begin
-	 require 'rubygems'
-	 require 'restclient'
+	 require "rubygems"
+	 require "restclient"
       rescue LoadError
 	 @@HAS_BUILD_GEMS = FALSE
       end
@@ -41,8 +41,8 @@ class ROCker
    #================================[ Utilities ]
    def restcall(url, outfile=nil)
       $stderr.puts "   # Calling: #{url}" if @o[:debug]
-      response = RestClient::Request.execute(:method=>:get, :url=>url,
-	 :timeout=>600)
+      response = RestClient::Request.execute(method: :get, url: url,
+	 timeout: 600)
       raise "Unable to reach EBI REST client, error code " +
 	 response.code.to_s + "." unless response.code == 200
       unless outfile.nil?
@@ -73,6 +73,10 @@ class ROCker
 	    genome_file=nil unless @o[:noclean]
 	    doc = ebiFetch(:embl, [genome_id], :gff3,
 	       genome_file).split("\n").grep(/^[^#]/)
+	    if doc.first =~ /ERROR 12 No entries found/
+	       doc = ebiFetch(:emblconexp, [genome_id], :gff3,
+		  genome_file).split("\n").grep(/^[^#]/)
+	    end
 	 end
 	 doc.each do |ln|
 	    next if ln =~ /^#/
@@ -80,7 +84,7 @@ class ROCker
 	    next if r.size < 9
 	    prots = r[8].split(/;/).grep(
 	       /^db_xref=UniProtKB[\/A-Za-z-]*:/){ |xref| xref.split(/:/)[1] }
-	    p = prots.select{ |id| pset.ids.include? id }.first
+	    p = prots.compact.select{ |id| pset.ids.include? id }.first
 	    trans = r[8].split(/;/).grep(
 	       /^protein_id=/){ |pid| pid.split(/=/)[1] }
 	    t = trans.select{ |id| pset.tranids.include? id }.first
@@ -191,7 +195,7 @@ class ROCker
 	    puts "  * downloading and parsing #{genome_set[set_type].size} " +
 	       "GFF3 document(s) in #{thrs} threads." unless @o[:q]
 	    $stderr.puts "   # Looking for translations: " +
-	       "#{protein_set[set_type].tranids}" if @o[:debug]
+	       "#{protein_set[set_type].tranids_dump}" if @o[:debug]
 	    $stderr.puts "   # Looking into: #{genome_set[set_type].ids}" if
 	       @o[:debug]
 	    # Launch threads

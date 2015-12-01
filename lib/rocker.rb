@@ -1,20 +1,21 @@
 #
-# @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
-# @author Luis (Coto) Orellana
+# @author  Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
+# @author  Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Sep-07-2015
+# @update  Dec-01-2015
 #
 
-require 'rocker/blasthit'
-require 'rocker/rocdata'
+require "rocker/blasthit"
+require "rocker/rocdata"
 
 class ROCker
    #================================[ Class ]
-   @@VERSION = "1.1.9"
+   @@VERSION = "1.1.10"
    @@CITATION = "Orellana, Rodriguez-R, & Konstantinidis. Under review. " +
       "Detecting and quantifying functional genes in short-read metagenomic " +
       "datasets: method development and application to the nitrogen cycle " +
       "genes."
+   @@DATE = "2015-12-01"
    @@DEFAULTS = {
       # General
       q: false, r: "R", nucl: false, debug: false, thr: 2, search: :blast,
@@ -33,6 +34,7 @@ class ROCker
    def self.defaults() @@DEFAULTS ; end
    def self.default(k) @@DEFAULTS[k] ; end
    def self.VERSION; @@VERSION ; end
+   def self.DATE; @@DATE ; end
    def self.CITATION; @@CITATION ; end
 
    #================================[ Instance ]
@@ -64,11 +66,11 @@ end
 
 #================================[ Extensions ]
 # To ROCker
-require 'rocker/step/build'
-require 'rocker/step/compile'
-require 'rocker/step/search'
-require 'rocker/step/filter'
-require 'rocker/step/plot'
+require "rocker/step/build"
+require "rocker/step/compile"
+require "rocker/step/search"
+require "rocker/step/filter"
+require "rocker/step/plot"
 
 # To other
 class Numeric
