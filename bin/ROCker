@@ -355,13 +355,14 @@ begin
       puts "ROCker v" + ROCker.VERSION
       puts ""
       puts "If you use ROCker in your research, please cite:"
-      puts ROCker.CITATION
+      puts ROCker.CITATION("\n")
       puts ""
       puts "ROCker can be freely used and distributed under the "
       puts "terms of the Artistic License 2.0. See LICENSE.txt."
       puts ""
       puts "For additional information and documentation, visit:"
       puts "http://enve-omics.ce.gatech.edu/rocker/"
+      puts ""
       puts "For our list of curated models, visits:"
       puts "http://enve-omics.ce.gatech.edu/rocker/models"
    end

@@ -11,10 +11,11 @@ require "rocker/rocdata"
 class ROCker
    #================================[ Class ]
    @@VERSION = "1.1.10"
-   @@CITATION = "Orellana, Rodriguez-R, & Konstantinidis. Under review. " +
-      "Detecting and quantifying functional genes in short-read metagenomic " +
-      "datasets: method development and application to the nitrogen cycle " +
-      "genes."
+   @@CITATION = [
+      "Orellana, Rodriguez-R, & Konstantinidis. Under review.",
+      "Detecting and quantifying functional genes in short-read",
+      "metagenomic datasets: method development and application",
+      "to the nitrogen cycle genes."]
    @@DATE = "2015-12-01"
    @@DEFAULTS = {
       # General
@@ -35,7 +36,7 @@ class ROCker
    def self.default(k) @@DEFAULTS[k] ; end
    def self.VERSION; @@VERSION ; end
    def self.DATE; @@DATE ; end
-   def self.CITATION; @@CITATION ; end
+   def self.CITATION(j=" ") @@CITATION.join(j) ; end
 
    #================================[ Instance ]
    attr_reader :o
