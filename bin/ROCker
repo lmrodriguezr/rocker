@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
-#
-# @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
-# @author Luis (Coto) Orellana
+
+# @author  Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
+# @author  Luis (Coto) Orellana
 # @license artistic license 2.0
-# @update Nov-25-2015
-#
+# @update  Mar-28-2016
 
 lib = File.expand_path("../lib", File.dirname(__FILE__))
 $:.push lib if Dir.exist? lib
@@ -26,8 +25,13 @@ $t = {
    		"thresholds, and the hits.",
    "info"    =>	"Display additional information about ROCker."
 }
-task = (ARGV.empty? ? "" : ARGV.shift).downcase
-ARGV << "-h" if ARGV.empty? and task != "info"
+
+if %w[-V --version].include? ARGV.first
+   task = "info"
+else
+   task = (ARGV.empty? ? "" : ARGV.shift).downcase
+   ARGV << "-h" if ARGV.empty? and task != "info"
+end
 
 o = {}
 opts = OptionParser.new do |opt|
@@ -324,8 +328,12 @@ opts = OptionParser.new do |opt|
    opt.on("-q", "--quiet", "Run quietly."){ |v| o[:q]=true }
    opt.on("-d", "--debug",
       "Display debugging information."){ |v| o[:debug]=true }
-   opt.on("-h", "--help", "Display this screen") do
+   opt.on("-h", "--help", "Display this screen.") do
       puts opt
+      exit
+   end
+   opt.on("-V", "--version","Display version.") do
+      puts "ROCker v" + ROCker.VERSION
       exit
    end
    opt.separator ""
@@ -335,6 +343,8 @@ opts = OptionParser.new do |opt|
    end
 end
 opts.parse!
+
+p ARGV
 
 
 #================================[ Main ]
@@ -363,7 +373,7 @@ begin
       puts "For additional information and documentation, visit:"
       puts "http://enve-omics.ce.gatech.edu/rocker/"
       puts ""
-      puts "For our list of curated models, visits:"
+      puts "For our list of curated models, visit:"
       puts "http://enve-omics.ce.gatech.edu/rocker/models"
    end
 rescue => err
