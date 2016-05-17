@@ -1,8 +1,7 @@
 #
-# @author Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
-# @author Luis (Coto) Orellana
-# @license artistic license 2.0
-# @update Dec-01-2015
+# @author  Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
+# @author  Luis (Coto) Orellana
+# @license Artistic-2.0
 #
 
 require "json"
@@ -19,7 +18,7 @@ class ROCker
       simulatorbin:{grinder:"grinder"},
       simulatorcmd:{grinder:"%1$s -reference_file \"%2$s\" -cf \"%3$f\" " +
 	 "-dc '-~*NnKkMmRrYySsWwBbVvHhDdXx' -md uniform 0.1 -mr 95 5 " +
-	 "-rd %4$d uniform 5 -base_name \"%5$s\""},
+	 "-rd %4$d uniform 5 -base_name \"%5$s\" -output_dir \"%6$s\""},
       alignerbin:{muscle:"muscle", clustalo:"clustalo"},
       alignercmd:{muscle:"%1$s -in \"%2$s\" -out \"%3$s\" -quiet",
 	 clustalo:"%1$s -i \"%2$s\" -o \"%3$s\" --threads=%4$d --force"}
@@ -303,10 +302,11 @@ class ROCker
 
 		  # Run simulator (except if the temporal file is already
 		  # there and can be reused)
+                  ofile = "#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}"
 		  bash sprintf(@o[:simulatorcmd], @o[:simulatorbin],
 		     "#{@o[:baseout]}.src.fasta.#{thr_i.to_s}",
 		     @o[:seqdepth]*@o[:readlen].to_f, @o[:readlen],
-		     "#{@o[:baseout]}.mg.tmp.#{thr_i.to_s}") unless
+		     File.basename(ofile), File.dirname(ofile)) unless
 			@o[:reuse] and
 			File.size? @o[:baseout] +
 			".mg.tmp.#{thr_i.to_s}-reads.fa"

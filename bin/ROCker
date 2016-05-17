@@ -2,8 +2,7 @@
 
 # @author  Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author  Luis (Coto) Orellana
-# @license artistic license 2.0
-# @update  Mar-28-2016
+# @license Artistic-2.0
 
 lib = File.expand_path("../lib", File.dirname(__FILE__))
 $:.push lib if Dir.exist? lib
@@ -147,7 +146,8 @@ opts = OptionParser.new do |opt|
 	 end.reduce([],:+) ){ |v| o[:makedbcmd]=v }
       opt.on("--simulator-cmd STR",
 	 "Command calling simulator, where %1$s: binary, %2$s: input,",
-	 "%3$s: seq. depth (X), %4$d: read len., %5$s: output.",
+	 "%3$s: seq. depth (X), %4$d: read len., %5$s: output file, " +
+         "%6$s: output dir.",
 	 *ROCker.default(:simulatorcmd).keys.map do |k|
 	    ["By default if --simulator #{k}:", "'" +
 	       ROCker.default(:simulatorcmd)[k] + "'"]

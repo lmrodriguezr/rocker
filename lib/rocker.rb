@@ -1,8 +1,7 @@
 #
 # @author  Luis M. Rodriguez-R <lmrodriguezr at gmail dot com>
 # @author  Luis (Coto) Orellana
-# @license artistic license 2.0
-# @update  Dec-01-2015
+# @license Artistic-2.0
 #
 
 require "rocker/blasthit"
@@ -10,13 +9,13 @@ require "rocker/rocdata"
 
 class ROCker
    #================================[ Class ]
-   @@VERSION = "1.1.11"
+   @@VERSION = "1.1.12"
    @@CITATION = [
       "Orellana, Rodriguez-R, & Konstantinidis. Under review.",
       "Detecting and quantifying functional genes in short-read",
       "metagenomic datasets: method development and application",
       "to the nitrogen cycle genes."]
-   @@DATE = "2015-12-01"
+   @@DATE = "2016-05-17"
    @@DEFAULTS = {
       # General
       q: false, r: "R", nucl: false, debug: false, thr: 2, search: :blast,
