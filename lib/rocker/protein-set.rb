@@ -63,6 +63,15 @@ class ProteinSet
       return [] if @genomes.empty?
       @genomes.values.reduce(:+).uniq
    end
+   def genome_by_prot_id(prot_id)
+     @genomes[prot_id]
+   end
+   ##
+   # Removes genomes linked to +prot_ids+ (an Array) and returns an Array
+   # of removed genomes.
+   def remove_genomes_by_prot_id!(prot_ids)
+     prot_ids.map{ |i| @genomes.delete(i) }.flatten.compact
+   end
    def tranids
       return [] if @tranids.empty?
       @tranids.values.reduce(:+).uniq

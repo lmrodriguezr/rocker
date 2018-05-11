@@ -103,6 +103,9 @@ opts = OptionParser.new do |opt|
       opt.on("--reuse-files",
 	 "Re-use existing result files. By default existing files are ignored."
 	 ){ |v| o[:reuse]=true }
+      opt.on("--keep-unlinked",
+         "Keep genomes with unlinked positive coordinates (missing references)."
+         ){ |v| o[:keep_unlinked] = v }
       
       opt.separator ""
       opt.separator "+ EXTERNAL SOFTWARE OPTIONS"
@@ -343,9 +346,6 @@ opts = OptionParser.new do |opt|
    end
 end
 opts.parse!
-
-p ARGV
-
 
 #================================[ Main ]
 rocker = ROCker.new(o)

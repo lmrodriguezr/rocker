@@ -44,6 +44,9 @@ class GenomeSet
    end
    def size() self.ids.size end
    def empty?() self.ids.empty? end
+   def delete!(ids)
+      ids.map{ |i| @ids.delete(i) }.flatten.compact
+   end
 
    #================================[ Utilities ]
    def genome2taxon(genome_id, rank="species")

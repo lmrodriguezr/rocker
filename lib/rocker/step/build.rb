@@ -12,7 +12,7 @@ class ROCker
    #================================[ Class ]
    @@EBIREST = "https://www.ebi.ac.uk/Tools"
    @@DEFAULTS.merge!({positive:[], negative:[], seqdepth:0.03, readlen:100,
-      minovl:50,
+      minovl:50, keep_unlinked:false,
       # Ext. Software
       aligner: :clustalo, simulator: :grinder,
       simulatorbin:{grinder:"grinder"},
@@ -54,6 +54,7 @@ class ROCker
    def ebiFetch(db, ids, format, outfile=nil)
       url = "#{ROCker.ebirest}/dbfetch/dbfetch/" +
 	 "#{db.to_s}/#{ids.join(",")}/#{format.to_s}"
+      $stderr.puts url
       self.restcall url, outfile
    end
    def get_coords_from_gff3(genome_ids, pset, thread_id, json_file)
@@ -250,8 +251,16 @@ class ROCker
       raise "Cannot find the genomic location of any provided sequence." if
 	 found.nil?
       missing = protein_set[:+].ids - found
-      warn "\nWARNING: Cannot find genomic location of #{missing.size} " +
-	 "sequence(s) #{missing.join(",")}.\n\n" unless missing.empty?
+      unless missing.empty?
+         warn "\nWARNING: Cannot find genomic location of #{missing.size} " +
+	    "sequence(s) #{missing.join(",")}.\n\n"
+         unless @o[:keep_unlinked]
+            del_genomes = protein_set[:+].remove_genomes_by_prot_id!(missing)
+            warn "WARNING: Ignoring #{del_genomes.size} genomes with missing " +
+               "coordinates #{del_genomes.join(",")}.\n\n"
+            genome_set[ :+ ].delete!(del_genomes)
+         end
+      end
       
       # Download genomes
       genome_set[:all] = GenomeSet.new(self,
@@ -260,7 +269,9 @@ class ROCker
       if @o[:reuse] and File.size? genomes_file
 	 puts "  * reusing existing file: #{genomes_file}." unless @o[:q]
       else
-	 puts "  * downloading " + genome_set[:all].size.to_s +
+	 raise "Something went wrong: Nothing left to download." if
+            genome_set[:all].empty?
+         puts "  * downloading " + genome_set[:all].size.to_s +
 	    " genome(s) in FastA." unless @o[:q]
 	 $stderr.puts "   # #{genome_set[:all].ids}" if @o[:debug]
 	 genome_set[:all].download genomes_file
@@ -321,8 +332,8 @@ class ROCker
 		     if l =~ /^>/
 			rd = %r{
 			   ^>(?<id>\d+)\s
-			   reference=[A-Za-z]+\|
-			   (?<genome_id>[A-Za-z0-9_]+)\|.*\s
+			   reference=[A-Za-z_]+[\|:]
+			   (?<genome_id>[A-Za-z0-9_]+)(?:\|.*)?\s
 			   position=(?<comp>complement\()?(?<from>\d+)\.\.
 			   (?<to>\d+)\)?\s
 			}x.match(l)
