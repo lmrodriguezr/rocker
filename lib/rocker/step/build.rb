@@ -10,7 +10,7 @@ require "rocker/genome-set"
 
 class ROCker
    #================================[ Class ]
-   @@EBIREST = "http://www.ebi.ac.uk/Tools"
+   @@EBIREST = "https://www.ebi.ac.uk/Tools"
    @@DEFAULTS.merge!({positive:[], negative:[], seqdepth:0.03, readlen:100,
       minovl:50,
       # Ext. Software
@@ -27,12 +27,12 @@ class ROCker
    def self.ebirest() @@EBIREST ; end
    def self.has_build_gems?
       return @@HAS_BUILD_GEMS unless @@HAS_BUILD_GEMS.nil?
-      @@HAS_BUILD_GEMS = TRUE
+      @@HAS_BUILD_GEMS = true
       begin
 	 require "rubygems"
 	 require "restclient"
       rescue LoadError
-	 @@HAS_BUILD_GEMS = FALSE
+	 @@HAS_BUILD_GEMS = false
       end
       @@HAS_BUILD_GEMS
    end
@@ -152,7 +152,7 @@ class ROCker
       ref_file = @o[:baseout] + ".ref.fasta"
       if not protein_set[:+].aln.nil?
 	 puts "  * reusing aligned sequences as positive set." unless @o[:q]
-	 protein_set[:+].get_from_aln(ref_file, aln)
+	 protein_set[:+].get_from_aln(ref_file, protein_set[:+].aln)
 	 @o[:noaln] = true
       elsif @o[:reuse] and File.size? ref_file
 	 puts "  * reusing positive set: #{ref_file}." unless @o[:q]
