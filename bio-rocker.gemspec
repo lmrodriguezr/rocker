@@ -4,7 +4,7 @@ require "rocker"
 Gem::Specification.new do |s|
    s.name	= "bio-rocker"
    s.version	= ROCker.VERSION
-   s.license	= "artistic 2.0"
+   s.license	= "Artistic-2.0"
    s.summary	= "ROCker"
    s.description = "Detecting and quantifying functional genes in " +
 		     "short-read metagenomic datasets"

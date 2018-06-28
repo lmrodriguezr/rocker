@@ -18,7 +18,16 @@ class GenomeSet
       tmp_ids = Array.new(self.ids)
       ofh = File.open(file, "w")
       while tmp_ids.size>0
-	 ofh.print rocker.ebiFetch(:embl, tmp_ids.shift(200), :fasta)
+	 ofh.print rocker.
+                  ebiFetch(:embl, tmp_ids.shift(200), :fasta).
+                  each_line.to_a.select { |i|
+            if i =~ /^Entry: (\S+) (.*)/
+              warn "EBI returned an error fetching #{$1}: #{$2}"
+              false
+            else
+              true
+            end
+         }.join
       end
       ofh.close
    end
