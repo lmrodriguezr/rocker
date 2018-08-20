@@ -1,0 +1,337 @@
+{
+  "families": {
+    "AmoA": {
+      "product": "Ammonia monooxygenase",
+      "collections": {
+        "AmoA_B_v2": {
+          "description": "bacterial, v2.0",
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "comments": "Explicitly excludes non-bacterial variants",
+          "positive": 8,
+          "negative": 14,
+          "models": [
+            {
+              "length": 125,
+              "stats": [7.40, 0.36, 98.1]
+            }
+          ]
+        },
+        "AmoA_A_v2": {
+          "description": "archaeal, v2.0",
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "comments": "Explicitly excludes non-archaeal variants",
+          "positive": 5,
+          "negative": 16,
+          "models": [ { "length": 125 } ]
+        },
+        "AmoA_B": {
+          "description": "bacterial",
+          "author": "Luis (Coto) Orellana",
+          "update": "Nov-06-2015",
+          "comments": "Explicitly excludes non-bacterial variants",
+          "positive": 7,
+          "negative": 14,
+          "models": [
+            {"length": 80}, {"length": 100}, {"length": 125},
+            {"length": 150}, {"length": 200}, {"length": 250}
+          ]
+        },
+        "AmoA_A": {
+          "description": "archaeal",
+          "author": "Luis (Coto) Orellana",
+          "update": "Nov-13-2015",
+          "comments": "Explicitly excludes non-archaeal variants",
+          "positive": 5,
+          "negative": 16,
+          "models": [ { "length": 125 } ]
+        }
+      }
+    },
+    "Hao": {
+      "product": "Hydroxylamine oxidoreductase",
+      "collections": {
+        "Hao": {
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 23,
+          "negative": 9,
+          "models": [
+            {
+              "length": 125,
+              "stats": [1.28, 0.11, 99.14]
+            }
+          ]
+        }
+      }
+    },
+    "NarG": {
+      "product": "Nitrate reductase",
+      "collections": {
+        "NarG": {
+          "author": "Despina Tsementzi & Luis M Rodriguez",
+          "search": "diamond",
+          "update": "Jun-11-2015",
+          "positive": 679,
+          "negative": 31,
+          "models": [
+            {
+              "length": 80,
+              "stats": [0.10,11.41,97.81],
+              "50bit_stats": [1.44, 11.59, 96.68]
+            },
+            {
+              "length": 100,
+              "stats": [0.98, 5.30, 97.58],
+              "50bit_stats": [1.75, 6.12, 96.79]
+            },
+            {
+              "length": 150,
+              "stats": [0.27, 0.20, 99.80],
+              "50bit_stats": [0.77, 0.23, 99.74]
+            },
+            {
+              "length": 200,
+              "stats": [0.24, 0.12, 99.87],
+              "50bit_stats": [0.94, 0.18, 99.79]
+            },
+            {
+              "length": 250,
+              "stats": [0.39, 0.09, 99.91],
+              "50bit_stats": [1.16, 0.23, 99.74]
+            },
+            {
+              "length": 500,
+              "stats": [0.49, 0.04, 99.95],
+              "50bit_stats": [0.81, 0.33, 99.66]
+            }
+          ]
+        }
+      }
+    },
+    "NarG_NxrA": {
+      "product": "Nitrate reductase and nitrite oxidoreductase alpha subunit",
+      "collections": {
+        "NarG_NxrA": {
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 305,
+          "models": [ { "length": 125 } ]
+        }
+      }
+    },
+    "NifH": {
+      "product": "Nitrogenase reductase subunit",
+      "collections": {
+        "NifH": {
+          "author": "Luis M Rodriguez-R and John Christian Gaby",
+          "update": "Aug-04-2018",
+          "positive": 120,
+          "negative": 56,
+          "models": [
+            {
+              "length": 100,
+              "stats": [21.70, 0.0045, 99.98]
+            },
+            {
+              "length": 150,
+              "stats": [23.09, 0.0031, 99.98]
+            },
+            {
+              "length": 200,
+              "stats": []
+            }
+          ]
+        }
+      }
+    },
+    "NirK": {
+      "product": "Nitrite reductase",
+      "collections": {
+        "NirK": {
+          "author": "Luis (Coto) Orellana",
+          "update": "Jul-14-2015",
+          "positive": 147,
+          "models": [
+            {
+              "length": 80,
+              "stats": [1.99, 2.72, 97.82]
+            },
+            {
+              "length": 100,
+              "stats": [2.76, 1.49, 97.71]
+            },
+            {
+              "length": 150,
+              "stats": [2.17, 0.73, 98.63]
+            },
+            {
+              "length": 200,
+              "stats": [1.72, 0.57, 99.02]
+            },
+            {
+              "length": 250,
+              "stats": [1.93, 0.49, 99.06]
+            },
+            {
+              "length": 500,
+              "stats": [1.64, 0.68, 99.04]
+            }
+          ]
+        },
+        "NirK_cladeThau": {
+          "description": "clade Thaumarchaeota",
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 18,
+          "models": [ { "length": 125 } ]
+        },
+        "NirK_cladeIII": {
+          "description": "clade III",
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 10,
+          "models": [ { "length": 125 } ]
+        },
+        "NirK_cladeI-II": {
+          "description": "clades I and II",
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 134,
+          "negative": 8,
+          "models": [ { "length": 125 } ]
+        }
+      }
+    },
+    "NorB": {
+      "product": "Nitric oxide reductase",
+      "collections": {
+        "NorB": {
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 304,
+          "models": [ { "length": 125 } ]
+        }
+      }
+    },
+    "NosZ": {
+      "product": "Nitrous oxide reductase",
+      "collections": {
+        "NosZ": {
+          "author": "Luis (Coto) Orellana",
+          "update": "Jul-14-2015",
+          "positive": 173,
+          "models": [
+            {
+              "length": 80,
+              "stats": [0.89, 7.44, 98.65]
+            },
+            {
+              "length": 100,
+              "stats": [1.09, 5.44, 98.33]
+            },
+            {
+              "length": 125,
+              "stats": [1.09, 0.66, 99.01]
+            },
+            {
+              "length": 150,
+              "stats": [0.73, 1.82, 98.94]
+            },
+            {
+              "length": 200,
+              "stats": [1.16, 0.84, 98.97]
+            },
+            {
+              "length": 250,
+              "stats": [0.61, 0.75, 99.33]
+            },
+            {
+              "length": 500,
+              "stats": [0.73, 0.24, 99.51]
+            }
+          ]
+        },
+        "NosZ_v2": {
+          "description": "v2.0",
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 167,
+          "models": [ { "length": 125 } ]
+        }
+      }
+    },
+    "NrfA": {
+      "product": "Nitrite reductase, formate-dependent",
+      "collections": {
+        "NrfA": {
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 260,
+          "negative": 8,
+          "models": [ { "length": 125 } ]
+        }
+      }
+    },
+    "RpoB": {
+      "product": "Ribosomal RNA polymerase B subunit",
+      "collections": {
+        "RpoB": {
+          "author": "Luis M Rodriguez-R",
+          "update": "Jun-09-2015",
+          "search": "diamond",
+          "positive": 757,
+          "models": [
+            {
+              "length": 80,
+              "stats": [0.05, 0.64, 99.90],
+              "50bit_stats": [3.28, 0.39, 96.94]
+            },
+            {
+              "length": 100,
+              "stats": [0.10, 0.59, 99.81],
+              "50bit_stats": [2.13, 0.63, 98.14]
+            },
+            {
+              "length": 150,
+              "stats": [0.13, 0.01, 99.98],
+              "50bit_stats": [1.30, 0.01, 98.88]
+            },
+            {
+              "length": 200,
+              "stats": [0.22, 0.01, 99.98],
+              "50bit_stats": [1.11, 0.01, 99.93]
+            },
+            {
+              "length": 250,
+              "stats": [0.17, 0.00, 99.99],
+              "50bit_stats": [1.14, 0.01, 99.95]
+            },
+            {
+              "length": 500,
+              "stats": [0.29, 0.00, 99.99],
+              "50bit_stats": [0.93, 0.01, 99.98]
+            }
+          ]
+        }
+      }
+    },
+    "UreC": {
+      "product": "Urease subunit alpha",
+      "collections": {
+        "UreC": {
+          "author": "Luis (Coto) Orellana",
+          "update": "Apr-18-2017",
+          "positive": 103,
+          "models": [
+            {
+              "length": 125,
+              "stats": [0.58, 0.01, 99.98]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
