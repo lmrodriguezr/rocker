@@ -66,6 +66,18 @@
         }
       }
     },
+    "KSalpha": {
+      "product": "Ketosynthase alpha subunit",
+      "collections": {
+        "KSalpha": {
+          "author": "Brittany Suttner",
+          "update": "Nov-20-2018",
+          "comments": "Polyketide antibiotic biosynthesis",
+          "positive": 26,
+          "models": [ { "length": 150 } ]
+        }
+      }
+    },
     "NarG": {
       "product": "Nitrate reductase",
       "collections": {
@@ -274,6 +286,21 @@
         }
       }
     },
+    "OxyT": {
+      "product": "N,N-dimethyltransferase",
+      "collections": {
+        "OxyT": {
+          "author": "Brittany Suttner",
+          "update": "Apr-13-2018",
+          "comments": "Tetracycline biosynthesis",
+          "positive": 10,
+          "negative": 4,
+          "models": [
+            { "length": 150 }
+          ]
+        }
+      }
+    },
     "RpoB": {
       "product": "Ribosomal RNA polymerase B subunit",
       "collections": {
@@ -313,6 +340,21 @@
               "stats": [0.29, 0.00, 99.99],
               "50bit_stats": [0.93, 0.01, 99.98]
             }
+          ]
+        }
+      }
+    },
+    "TetM": {
+      "product": "Tetracycline resistance",
+      "collections": {
+        "TetM": {
+          "author": "Brittany Suttner",
+          "update": "Apr-10-2018",
+          "positive": 60,
+          "negative": 4,
+          "models": [
+            { "length": 100 },
+            { "length": 150 }
           ]
         }
       }
