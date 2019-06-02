@@ -11,13 +11,14 @@ require 'rocker/alignment'
 require 'tmpdir'
 
 class ROCData
-   attr_reader :aln, :windows, :r, :refined
+   attr_reader :aln, :windows, :r, :refined, :signatures
    # Use ROCData.new(table,aln,window) to re-compute from table, use
    # ROCData.new(data) to load
    def initialize(val, aln=nil, window=nil)
       @r = RInterface.new
       @nucl = false
       @refined = false
+      @signatures = { v: 'ROCker' + ROCker.VERSION, d: Time.now }
       if not aln.nil?
 	 @aln = aln
 	 self.rrun "library('pROC');"
@@ -126,13 +127,12 @@ class ROCData
       end
    end
    def rrun(cmd, type=nil) self.r.run cmd, type end
-   def save(file)
-      f = File.open(file, "w")
-      f.print self.to_s
-      f.close
+   def save(file, sign = {})
+      sign.each{ |k,v| @signatures[k] = v }
+      File.open(file, 'w') { |fh| fh.print self.to_s }
    end
    def to_s
-      o = "#v ROCker " + ROCker.VERSION + "\n"
+      o = signatures.map{ |k,v| "##{k} #{v}\n" }.join
       self.windows.each{|w| o += w.to_s}
       o += self.aln.to_s
       return o

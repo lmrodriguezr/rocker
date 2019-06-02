@@ -139,14 +139,14 @@ opts = OptionParser.new do |opt|
 	 *ROCker.default(:searchcmd).keys.map do |k|
 	    ["By default if --search #{k}:", "'" +
 	       ROCker.default(:searchcmd)[k] + "'"]
-	 end.reduce([],:+) ){ |v| o[:searchcmd]=v }
+	 end.flatten ){ |v| o[:searchcmd]=v }
       opt.on("--makedb-cmd STR",
 	 "Command calling database formater for similarity search, where",
 	 "%1$s: binaries, %2$s: dbtype, %3$s: input, %4$s: database.",
 	 *ROCker.default(:makedbcmd).keys.map do |k|
 	    ["By default if --search #{k}:", "'" +
 	       ROCker.default(:makedbcmd)[k] + "'"]
-	 end.reduce([],:+) ){ |v| o[:makedbcmd]=v }
+	 end.flatten ){ |v| o[:makedbcmd]=v }
       opt.on("--simulator-cmd STR",
 	 "Command calling simulator, where %1$s: binary, %2$s: input,",
 	 "%3$s: seq. depth (X), %4$d: read len., %5$s: output file, " +
@@ -154,7 +154,7 @@ opts = OptionParser.new do |opt|
 	 *ROCker.default(:simulatorcmd).keys.map do |k|
 	    ["By default if --simulator #{k}:", "'" +
 	       ROCker.default(:simulatorcmd)[k] + "'"]
-	 end.reduce([],:+) ){ |v| o[:simulatorcmd]=v }
+	 end.flatten ){ |v| o[:simulatorcmd]=v }
       opt.on("--aligner-cmd STR",
 	 "Command calling aligner, where %1$s: binary, %2$s: input,",
 	 "%3$s: output, %4$d: threads.",
@@ -164,6 +164,9 @@ opts = OptionParser.new do |opt|
 	 end.reduce([],:+) ){ |v| o[:alignercmd]=v }
    when "compile"
       opt.separator "+ COMPILATION ARGUMENTS"
+      opt.on("-l", "--readlen INTEGER",
+	 "Average read length used in the compile step (Mandatory)."
+	 ){ |v| o[:readlen] = v.to_i }
       opt.on("-a", "--alignment PATH",
 	 "Protein alignment of the reference sequences. Required."
 	 ){ |v| o[:aln]=v }
@@ -248,16 +251,16 @@ opts = OptionParser.new do |opt|
 	 "Command calling similarity search, where %1$s: binaries, %2$s: " +
 	 "program, %3$s: input, %4$s: database, %5$s: output, %6$d: threads.",
 	 *ROCker.default(:searchcmd).keys.map do |k|
-	    "By default if --search #{k}: '" + ROCker.default(:searchcmd)[k] +
-	       "'."
-	 end ){ |v| o[:searchcmd]=v }
+	    ["By default if --search #{k}:",
+               "'" + ROCker.default(:searchcmd)[k] + "'"]
+	 end.flatten ){ |v| o[:searchcmd]=v }
       opt.on("--makedb-cmd STR",
 	 "Command calling database format for similarity search, where %1$s: " +
 	 "binaries, %2$s: dbtype, %3$s: input, %4$s: database.",
 	 *ROCker.default(:makedbcmd).keys.map do |k|
-	    "By default if --search #{k}: '" + ROCker.default(:makedbcmd)[k] +
-	       "'."
-	 end ){ |v| o[:makedbcmd]=v }
+	    ["By default if --search #{k}:",
+               "'" + ROCker.default(:makedbcmd)[k] + "'" ]
+	 end.flatten ){ |v| o[:makedbcmd]=v }
    when "filter"
       opt.separator "+ FILTERING ARGUMENTS"
       opt.on("-k", "--rocker PATH",

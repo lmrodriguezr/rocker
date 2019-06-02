@@ -13,6 +13,7 @@ class ROCker
    def compile!
       raise "-a/--alignment is mandatory." if @o[:aln].nil?
       raise "-a/--alignment must exist." unless File.exist? @o[:aln]
+      raise "-l/--readlen is mandatory." if @o[:readlen].nil?
       if @o[:table].nil?
 	 raise "-T/--table is mandatory unless -b is provided." if
 	    @o[:blast].nil? or not File.exist? @o[:blast]
@@ -52,7 +53,7 @@ class ROCker
 	    data.refine! @o[:table]
       end
       puts "  * saving ROCker file: #{@o[:rocker]}." unless @o[:q]
-      data.save @o[:rocker]
+      data.save(@o[:rocker], l: @o[:readlen])
    end # compile!
 end # ROCker
 
