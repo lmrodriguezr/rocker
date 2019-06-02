@@ -6,7 +6,7 @@
 #
 
 class BlastHit
-   attr_reader :sbj, :sfrom, :sto, :bits, :istrue, :isfalse, :midpoint
+   attr_reader :qry, :sbj, :sfrom, :sto, :bits, :istrue, :isfalse, :midpoint
    # Initialize from BLAST using new(ln,aln),
    # initialize from TABLE using new(ln)
    def initialize(ln, aln=nil)
@@ -20,6 +20,7 @@ class BlastHit
 	 @istrue = l[4]=='-1'
 	 @midpoint = l[5].to_i
       else
+         @qry   = l[0]
 	 s = aln.seq(l[1])
 	 return nil if s.nil?
 	 @sbj	= s.id

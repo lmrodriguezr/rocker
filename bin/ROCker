@@ -236,6 +236,9 @@ opts = OptionParser.new do |opt|
       opt.on("-x", "--query-blast PATH",
 	 "Unfiltered tabular BLAST. By default, this file is not " +
 	 "kept."){ |v| o[:qblast]=v }
+      opt.on('-L', '--length-correction PATH',
+         'Path to the query reads, used to apply read-length correction to ' +
+         'bit scores.'){ |v| o[:lencorr] = v }
       
       opt.separator ""
       opt.separator "+ EXTERNAL SOFTWARE OPTIONS"
@@ -271,6 +274,9 @@ opts = OptionParser.new do |opt|
 	 "dataset. Required."){ |v| o[:qblast]=v }
       opt.on("-o", "--out-blast PATH",
 	 "Filtered tabular BLAST to be created. Required."){ |v| o[:oblast]=v }
+      opt.on('-L', '--length-correction PATH',
+         'Path to the query reads, used to apply read-length correction to ' +
+         'bit scores.'){ |v| o[:lencorr] = v }
    when "plot"
       opt.separator "+ PLOTTING ARGUMENTS"
       opt.on("-k", "--rocker PATH",

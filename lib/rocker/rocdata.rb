@@ -14,22 +14,27 @@ class ROCData
    attr_reader :aln, :windows, :r, :refined, :signatures
    # Use ROCData.new(table,aln,window) to re-compute from table, use
    # ROCData.new(data) to load
-   def initialize(val, aln=nil, window=nil)
+   def initialize(val, aln = nil, window = nil)
       @r = RInterface.new
       @nucl = false
       @refined = false
-      @signatures = { v: 'ROCker' + ROCker.VERSION, d: Time.now }
       if not aln.nil?
 	 @aln = aln
+         @signatures = { v: "ROCker #{ROCker.VERSION}", d: Time.now.to_s }
 	 self.rrun "library('pROC');"
 	 self.rrun "x <- read.table('#{val}', sep='\\t', h=F);"
 	 self.init_windows! window
       else
 	 f = File.open(val, "r")
 	 @windows = []
+         @signatures = {}
 	 while ln = f.gets
-	    break unless /^#:/.match(ln).nil?
-	    @windows << ROCWindow.new(self, ln)
+            break unless /^#:/.match(ln).nil?
+            if ln =~ /^#(\S+) (.*)/
+               @signatures[$1.to_sym] = $2
+            else
+               @windows << ROCWindow.new(self, ln)
+            end
 	 end
 	 f.close
 	 @aln = Alignment.new
@@ -128,14 +133,14 @@ class ROCData
    end
    def rrun(cmd, type=nil) self.r.run cmd, type end
    def save(file, sign = {})
-      sign.each{ |k,v| @signatures[k] = v }
-      File.open(file, 'w') { |fh| fh.print self.to_s }
+     @signatures.merge! sign
+     File.open(file, 'w') { |fh| fh.print self.to_s }
    end
    def to_s
-      o = signatures.map{ |k,v| "##{k} #{v}\n" }.join
-      self.windows.each{|w| o += w.to_s}
-      o += self.aln.to_s
-      return o
+     o = signatures.map{ |k,v| "##{k} #{v}\n" }.join
+     self.windows.each{ |w| o += w.to_s }
+     o += self.aln.to_s
+     return o
    end
 end
 
