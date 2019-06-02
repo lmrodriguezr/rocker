@@ -236,9 +236,8 @@ opts = OptionParser.new do |opt|
       opt.on("-x", "--query-blast PATH",
 	 "Unfiltered tabular BLAST. By default, this file is not " +
 	 "kept."){ |v| o[:qblast]=v }
-      opt.on('-L', '--length-correction PATH',
-         'Path to the query reads, used to apply read-length correction to ' +
-         'bit scores.'){ |v| o[:lencorr] = v }
+      opt.on('-L', '--length-correction',
+         'Apply read-length correction to bit scores.'){ |v| o[:lencorr] = v }
       
       opt.separator ""
       opt.separator "+ EXTERNAL SOFTWARE OPTIONS"

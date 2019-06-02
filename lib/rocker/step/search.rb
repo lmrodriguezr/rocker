@@ -15,6 +15,7 @@ class ROCker
    def search!
       raise "-k/--rocker is mandatory." if @o[:rocker].nil?
       raise "-i/--query is mandatory." if @o[:query].nil?
+      @o[:lencorr] = @o[:query] unless @o[:lencorr].nil?
 
       # Check requirements
       puts "Testing environment." unless @o[:q]
