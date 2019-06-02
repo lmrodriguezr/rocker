@@ -9,13 +9,13 @@ require "rocker/rocdata"
 
 class ROCker
    #================================[ Class ]
-   @@VERSION = "1.2.0"
+   @@VERSION = "1.3.0"
    @@CITATION = [
       "Orellana, Rodriguez-R & Konstantinidis, 2016. DOI:10.1093/nar/gkw900.",
       "ROCker: accurate detection and quantification of target genes in",
       "short-read metagenomic data sets by modeling sliding-window bitscores.",
       "Nucleic Acids Research 45(3):e14."]
-   @@DATE = "2018-06-28"
+   @@DATE = "2019-06-02"
    @@DEFAULTS = {
       # General
       q: false, r: "R", nucl: false, debug: false, thr: 2, search: :blast,
