@@ -20,20 +20,21 @@ class ROCker
       puts "Loading ROCker file: #{@o[:rocker]}." unless @o[:q]
       data = ROCData.new @o[:rocker]
     end
-    corr = {}
-    readlen = 0
+    readlengths = {}
+    exp_readlen = 0
     unless @o[:lencorr].nil?
+      @o[:lencorr_max] ||= 0.4
       raise "Unsigned length in model, please re-compile model to use -L" if
         data.signatures[:l].nil?
-      readlen = data.signatures[:l].to_i
+      exp_readlen = data.signatures[:l].to_i
       File.open(@o[:lencorr], 'r') do |fh|
         k = nil
         fh.each_line do |ln|
           if ln =~ /^>(\S+)/
             k = $1
-            corr[k] = 0
+            readlengths[k] = 0
           else
-            corr[k] += ln.chomp.size
+            readlengths[k] += ln.chomp.size
           end
         end
       end
@@ -43,18 +44,28 @@ class ROCker
     puts "Filtering similarity search: #{@o[:qblast]}." unless @o[:q]
     oh = File.open(@o[:oblast], 'w')
     File.open(@o[:qblast], 'r') do |ih|
+      max = @o[:lencorr_max]
       ih.each_line do |ln|
         bh = BlastHit.new(ln, data.aln)
-        bs = bh.bits
-        unless @o[:lencorr].nil?
-          corrlen = [corr[bh.qry].to_i, 0.6 * readlen].max
-          bs = bs * readlen / corrlen if corrlen < readlen
-        end
-        oh.print ln if
-          not(bh.sfrom.nil?) and bs >= data.win_at_col(bh.midpoint).thr
+        bs = correct_bs(bh, readlengths[bh.qry], exp_readlen, @o[:lencorr].nil?)
+        oh.print ln if not(bh.sfrom.nil?) and
+              bs >= data.win_at_col(bh.midpoint).thr
       end
     end
     oh.close
   end # filter!
+
+  def correct_bs(bh, readlen, exp_readlen, max_corr)
+    bs = bh.bits
+    return bs if @o[:lencorr].nil? or readlen.nil? or readlen >= exp_readlen
+    readlen = corr[bh.qry].to_i
+    bits_per_aa = bs.to_f / readlen
+    miss = exp_readlen - readlen
+    max_tri = max_corr * readlen * bits_per_aa / 2
+    extra = [0.0, readlen * (max_corr + 1.0) - exp_readlen].max
+    tanTheta = bits_per_aa / (max_corr * readlen)
+    extra_tri = extra * (extra * tanTheta) / 2
+    bs + (max_tri - extra_tri)
+  end
 end # ROCker
 
