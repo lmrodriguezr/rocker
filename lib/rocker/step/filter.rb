@@ -47,7 +47,7 @@ class ROCker
       max = @o[:lencorr_max]
       ih.each_line do |ln|
         bh = BlastHit.new(ln, data.aln)
-        bs = correct_bs(bh, readlengths[bh.qry], exp_readlen, @o[:lencorr].nil?)
+        bs = correct_bs(bh, readlengths[bh.qry], exp_readlen, @o[:lencorr])
         oh.print ln if not(bh.sfrom.nil?) and
               bs >= data.win_at_col(bh.midpoint).thr
       end
