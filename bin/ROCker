@@ -238,7 +238,7 @@ opts = OptionParser.new do |opt|
 	 "kept."){ |v| o[:qblast]=v }
       opt.on('-L', '--length-correction',
          'Apply read-length correction to bit scores.'){ |v| o[:lencorr] = v }
-      opt.on('-M', '--max-length-correction',
+      opt.on('-M', '--max-length-correction FLOAT',
          'Maximum length correction, as a read length fraction.'
          ){ |v| o[:lencorr_max] = v.to_f }
       
@@ -279,7 +279,7 @@ opts = OptionParser.new do |opt|
       opt.on('-L', '--length-correction PATH',
          'Path to the query reads, used to apply read-length correction to ' +
          'bit scores.'){ |v| o[:lencorr] = v }
-      opt.on('-M', '--max-length-correction',
+      opt.on('-M', '--max-length-correction FLOAT',
          'Maximum length correction, as a read length fraction.'
          ){ |v| o[:lencorr_max] = v.to_f }
    when "plot"
