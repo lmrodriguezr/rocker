@@ -58,7 +58,6 @@ class ROCker
   def correct_bs(bh, readlen, exp_readlen, max_corr)
     bs = bh.bits
     return bs if @o[:lencorr].nil? or readlen.nil? or readlen >= exp_readlen
-    readlen = corr[bh.qry].to_i
     bits_per_aa = bs.to_f / readlen
     miss = exp_readlen - readlen
     max_tri = max_corr * readlen * bits_per_aa / 2
