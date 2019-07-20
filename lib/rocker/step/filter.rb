@@ -44,12 +44,13 @@ class ROCker
     puts "Filtering similarity search: #{@o[:qblast]}." unless @o[:q]
     oh = File.open(@o[:oblast], 'w')
     File.open(@o[:qblast], 'r') do |ih|
-      max = @o[:lencorr_max]
       ih.each_line do |ln|
         bh = BlastHit.new(ln, data.aln)
-        bs = correct_bs(bh, readlengths[bh.qry], exp_readlen, @o[:lencorr])
+        next if bh.sbj.nil? # <- When the hit is not against a known target
+        bs = @o[:lencorr].nil? ? bh.bits :
+          correct_bs(bh, readlengths[bh.qry], exp_readlen, @o[:lencorr_max])
         oh.print ln if not(bh.sfrom.nil?) and
-              bs >= data.win_at_col(bh.midpoint).thr
+          bs >= data.win_at_col(bh.midpoint).thr
       end
     end
     oh.close
