@@ -63,8 +63,8 @@ class ROCker
     miss = exp_readlen - readlen
     max_tri = max_corr * readlen * bits_per_aa / 2
     extra = [0.0, readlen * (max_corr + 1.0) - exp_readlen].max
-    tanTheta = bits_per_aa / (max_corr * readlen)
-    extra_tri = extra * (extra * tanTheta) / 2
+    tanTheta = max_corr > 0.0 ? bits_per_aa / (max_corr * readlen) : 0.0
+    extra_tri = extra * extra * tanTheta / 2
     bs + (max_tri - extra_tri)
   end
 end # ROCker
