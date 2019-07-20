@@ -9,7 +9,7 @@ require 'rocker/rocdata'
 
 class ROCker
   #================================[ Class ]
-  @@VERSION = '1.4.0'
+  @@VERSION = '1.4.1'
   @@CITATION = [
     'Orellana, Rodriguez-R & Konstantinidis, 2016. DOI:10.1093/nar/gkw900.',
     'ROCker: accurate detection and quantification of target genes in',
