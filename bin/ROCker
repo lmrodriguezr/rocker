@@ -241,7 +241,10 @@ opts = OptionParser.new do |opt|
       opt.on('-M', '--max-length-correction FLOAT',
          'Maximum length correction, as a read length fraction.',
          'By default: 0.4.'){ |v| o[:lencorr_max] = v.to_f }
-      
+      opt.on('-P', '--length-correction-penalty FLOAT',
+         'Penalty for length correction. By default uses the triangle method.',
+         'Recommended value: 0.5.'){ |v| o[:lencorr_pen] = v.to_f }
+
       opt.separator ""
       opt.separator "+ EXTERNAL SOFTWARE OPTIONS"
       opt.on("--search STR",
@@ -266,6 +269,7 @@ opts = OptionParser.new do |opt|
 	    ["By default if --search #{k}:",
                "'" + ROCker.default(:makedbcmd)[k] + "'" ]
 	 end.flatten ){ |v| o[:makedbcmd]=v }
+
    when "filter"
       opt.separator "+ FILTERING ARGUMENTS"
       opt.on("-k", "--rocker PATH",
@@ -282,6 +286,10 @@ opts = OptionParser.new do |opt|
       opt.on('-M', '--max-length-correction FLOAT',
          'Maximum length correction, as a read length fraction.',
          'By default: 0.4.'){ |v| o[:lencorr_max] = v.to_f }
+      opt.on('-P', '--length-correction-penalty FLOAT',
+         'Penalty for length correction. By default uses the triangle method.',
+         'Recommended value: 0.5.'){ |v| o[:lencorr_pen] = v.to_f }
+
    when "plot"
       opt.separator "+ PLOTTING ARGUMENTS"
       opt.on("-k", "--rocker PATH",
@@ -327,6 +335,7 @@ opts = OptionParser.new do |opt|
 	 "Height of the plot in inches. By default: " +
 	 ROCker.default(:height).to_s +
 	 "."){ |v| o[:width]=v.to_f }
+
    else
       opt.banner = "Usage: ROCker.rb [task] [options]"
       opt.separator ""

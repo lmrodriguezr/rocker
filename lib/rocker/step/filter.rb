@@ -48,7 +48,8 @@ class ROCker
         bh = BlastHit.new(ln, data.aln)
         next if bh.sbj.nil? # <- When the hit is not against a known target
         bs = @o[:lencorr].nil? ? bh.bits :
-          correct_bs(bh, readlengths[bh.qry], exp_readlen, @o[:lencorr_max])
+          correct_bs(bh, readlengths[bh.qry], exp_readlen,
+            @o[:lencorr_max], @o[:lencorr_pen])
         oh.print ln if not(bh.sfrom.nil?) and
           bs >= data.win_at_col(bh.midpoint).thr
       end
@@ -56,16 +57,20 @@ class ROCker
     oh.close
   end # filter!
 
-  def correct_bs(bh, readlen, exp_readlen, max_corr)
+  def correct_bs(bh, readlen, exp_readlen, max_corr, penalty)
     bs = bh.bits
     return bs if @o[:lencorr].nil? or readlen.nil? or readlen >= exp_readlen
     bits_per_aa = bs.to_f / readlen
-    miss = exp_readlen - readlen
-    max_tri = max_corr * readlen * bits_per_aa / 2
-    extra = [0.0, readlen * (max_corr + 1.0) - exp_readlen].max
-    tanTheta = max_corr > 0.0 ? bits_per_aa / (max_corr * readlen) : 0.0
-    extra_tri = extra * extra * tanTheta / 2
-    bs + (max_tri - extra_tri)
+    if penalty.nil? or penalty > 1.0
+      miss = [exp_readlen - readlen, max_corr * readlen].min
+      return bs + (bits_per_aa * miss * penalty)
+    else
+      extra = [0.0, readlen * (max_corr + 1.0) - exp_readlen].max
+      max_tri = max_corr * readlen * bits_per_aa / 2
+      tanTheta = max_corr > 0.0 ? bits_per_aa / (max_corr * readlen) : 0.0
+      extra_tri = extra * extra * tanTheta / 2
+      return bs + (max_tri - extra_tri)
+    end
   end
 end # ROCker
 
