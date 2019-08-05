@@ -62,14 +62,14 @@ class ROCker
     return bs if @o[:lencorr].nil? or readlen.nil? or readlen >= exp_readlen
     bits_per_aa = bs.to_f / readlen
     if penalty.nil? or penalty > 1.0
-      miss = [exp_readlen - readlen, max_corr * readlen].min
-      return bs + (bits_per_aa * miss * penalty)
-    else
       extra = [0.0, readlen * (max_corr + 1.0) - exp_readlen].max
       max_tri = max_corr * readlen * bits_per_aa / 2
       tanTheta = max_corr > 0.0 ? bits_per_aa / (max_corr * readlen) : 0.0
       extra_tri = extra * extra * tanTheta / 2
       return bs + (max_tri - extra_tri)
+    else
+      miss = [exp_readlen - readlen, max_corr * readlen].min
+      return bs + (bits_per_aa * miss * penalty)
     end
   end
 end # ROCker
