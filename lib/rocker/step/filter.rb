@@ -69,7 +69,7 @@ class ROCker
       return bs + (max_tri - extra_tri)
     else
       miss = [exp_readlen - readlen, max_corr * readlen].min
-      return bs + (bits_per_aa * miss * penalty)
+      return bs + (bits_per_aa * miss * (1.0 - penalty))
     end
   end
 end # ROCker
