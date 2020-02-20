@@ -34,8 +34,8 @@
           "positive": 7,
           "negative": 14,
           "models": [
-            {"length": 80}, {"length": 100}, {"length": 125},
-            {"length": 150}, {"length": 200}, {"length": 250}
+            { "length": 80 },  { "length": 100 }, { "length": 125 },
+            { "length": 150 }, { "length": 200 }, { "length": 250 }
           ]
         },
         "AmoA_A": {
@@ -46,6 +46,47 @@
           "positive": 5,
           "negative": 16,
           "models": [ { "length": 125 } ]
+        }
+      }
+    },
+    "BLA": {
+      "product": "Beta-lactamase",
+      "collections": {
+        "OXA": {
+          "author": "Brittany Suttner",
+          "search": "diamond",
+          "comments": "Beta-lactamase OXA family (blaOXA)",
+          "update": "Feb-18-2020",
+          "positive": 136,
+          "negative": 30,
+          "models": [ { "length": 150 }, { "length": 250 } ]
+        },
+        "MBL": {
+          "author": "Brittany Suttner",
+          "search": "diamond",
+          "comments": "Metalo-beta-lactamase",
+          "update": "Feb-18-2020",
+          "positive": 86,
+          "negative": 5,
+          "models": [ { "length": 150 }, { "length": 250 } ]
+        },
+        "MBL_S1_S2": {
+          "author": "Brittany Suttner",
+          "search": "diamond",
+          "comments": "Metalo-beta-lactamase clades S1 and S2",
+          "update": "Feb-18-2020",
+          "positive": 65,
+          "negative": 5,
+          "models": [ { "length": 150 }, { "length": 250 } ]
+        },
+        "MBL_S3": {
+          "author": "Brittany Suttner",
+          "search": "diamond",
+          "comments": "Metalo-beta-lactamase clade S3",
+          "update": "Feb-18-2020",
+          "positive": 71,
+          "negative": 5,
+          "models": [ { "length": 150 }, { "length": 250 } ]
         }
       }
     },
