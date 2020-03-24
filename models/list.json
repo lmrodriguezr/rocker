@@ -52,41 +52,88 @@
     "BLA": {
       "product": "Beta-lactamase",
       "collections": {
-        "OXA": {
-          "author": "Brittany Suttner",
+        "BlaA": {
+          "author": "Siyu Zhang",
           "search": "diamond",
-          "comments": "Beta-lactamase OXA family (blaOXA)",
-          "update": "Feb-18-2020",
-          "positive": 136,
-          "negative": 30,
-          "models": [ { "length": 150 }, { "length": 250 } ]
+          "comments": "Class A beta-lactamase",
+          "update": "Feb-24-2020",
+          "positive": 348,
+          "negative": 84,
+          "models": [
+            { "length": 150, "stats": [2.93, 0.039, 99.946] },
+            { "length": 250, "stats": [2.96, 0.024, 99.968] }
+          ]
         },
         "MBL": {
           "author": "Brittany Suttner",
           "search": "diamond",
-          "comments": "Metalo-beta-lactamase",
+          "comments": "Metalo-beta-lactamase (class B)",
           "update": "Feb-18-2020",
           "positive": 86,
           "negative": 5,
-          "models": [ { "length": 150 }, { "length": 250 } ]
+          "models": [
+            { "length": 150, "stats": [2.71, 0.045, 99.8] },
+            { "length": 250, "stats": [2.51, 0.045, 99.9] }
+          ]
         },
         "MBL_S1_S2": {
           "author": "Brittany Suttner",
           "search": "diamond",
-          "comments": "Metalo-beta-lactamase clades S1 and S2",
+          "comments": "Metalo-beta-lactamase (class B) subclasses S1 and S2",
           "update": "Feb-18-2020",
           "positive": 65,
           "negative": 5,
-          "models": [ { "length": 150 }, { "length": 250 } ]
+          "models": [
+            { "length": 150, "stats": [1.01, 0.17, 99.7] },
+            { "length": 250, "stats": [0.631, 0.0897, 99.9] }
+          ]
         },
         "MBL_S3": {
           "author": "Brittany Suttner",
           "search": "diamond",
-          "comments": "Metalo-beta-lactamase clade S3",
+          "comments": "Metalo-beta-lactamase (class B) subclass S3",
           "update": "Feb-18-2020",
           "positive": 71,
           "negative": 5,
-          "models": [ { "length": 150 }, { "length": 250 } ]
+          "models": [
+            { "length": 150, "stats": [5.72, 0.237, 99.6] },
+            { "length": 250, "stats": [3.44, 2.87, 97.1] }
+          ]
+        },
+        "BlaC": {
+          "author": "Siyu Zhang",
+          "comments": "Class C beta-lactamase",
+          "update": "Feb-24-2020",
+          "positive": 152,
+          "negative": 44,
+          "models": [
+            { "length": 150, "stats": [1.864, 9e-5, 99.999] },
+            { "length": 250, "stats": [2.166, 0.00022, 99.999] }
+          ]
+        },
+        "OXA": {
+          "author": "Brittany Suttner",
+          "search": "diamond",
+          "comments": "Beta-lactamase OXA family (blaOXA, class D)",
+          "update": "Feb-18-2020",
+          "positive": 136,
+          "negative": 30,
+          "models": [
+            { "length": 150, "stats": [0.878, 0.174, 99.8] },
+            { "length": 250, "stats": [2.58, 0.0898, 99.9] }
+          ]
+        },
+        "TEM": {
+          "author": "Brittany Suttner",
+          "search": "diamond",
+          "comments": "Beta-lactamase TEM family (blaTEM)",
+          "update": "Feb-24-2020",
+          "positive": 11,
+          "negative": 33,
+          "models": [
+            { "length": 150, "stats": [1.186, 0.818, 98.98] },
+            { "length": 250, "stats": [3.524, 0.722, 97.89] }
+          ]
         }
       }
     },
