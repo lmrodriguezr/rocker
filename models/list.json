@@ -56,12 +56,12 @@
           "author": "Siyu Zhang",
           "search": "diamond",
           "comments": "Class A beta-lactamase",
-          "update": "Feb-24-2020",
-          "positive": 348,
+          "update": "Apr-19-2020",
+          "positive": 353,
           "negative": 84,
           "models": [
-            { "length": 150, "stats": [2.93, 0.039, 99.946] },
-            { "length": 250, "stats": [2.96, 0.024, 99.968] }
+            { "length": 150, "stats": [1.9422, 0.0055, 99.982] },
+            { "length": 250, "stats": [2.5372, 0.0042, 99.987] }
           ]
         },
         "MBL": {
