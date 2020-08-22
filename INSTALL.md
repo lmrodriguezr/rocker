@@ -8,7 +8,7 @@ Accurately detecting functional genes in metagenomes.
    [nokogiri](http://www.nokogiri.org/) packages. To install the required packages execute:
    
    ```bash
-   $> gem install rest_client
+   $> gem install rest-client
    $> gem install nokogiri
    $> gem install json
    ```
